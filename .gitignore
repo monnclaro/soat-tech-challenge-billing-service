@@ -5,6 +5,8 @@ bin/
 obj/
 out/
 TestResults/
+coverage.opencover.xml
+coverage*.xml
 
 # =========================
 # Rider / IntelliJ

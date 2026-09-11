@@ -134,3 +134,25 @@ dotnet test
 
 Cobre: regras de arquitetura (NetArchTest, `tests/Tests/Camadas`) e transições de estado das
 entidades `Orcamento`/`Pagamento` (xUnit + FluentAssertions, `tests/Tests/Domain`).
+
+## CI/CD
+
+`.github/workflows/ci-cd.yml`, mesmo padrão do OS Service:
+
+1. **Gate de cobertura (80%)** — `dotnet test` com Coverlet (`/p:Threshold=80 /p:ThresholdType=line`), falha o job se ficar abaixo.
+2. **Quality Gate do SonarCloud** — `dotnet-sonarscanner begin/end` em volta do build, consumindo o relatório OpenCover do Coverlet.
+
+Em `pull_request`, roda só `build-test`. Em `push` para `main`, roda também `deploy`: build/push da imagem no ECR e `kubectl apply` dos manifests em `k8s/` (namespace `soat-billing`, NodePort `30082`).
+
+### Secrets necessários no repositório GitHub
+
+| Secret | Uso |
+|---|---|
+| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / `AWS_SESSION_TOKEN` | Credenciais de sessão temporária da AWS Academy (deploy) |
+| `SONAR_TOKEN` | Autenticação no SonarCloud (org `monnclaro`) |
+| `MERCADOPAGO_ACCESS_TOKEN` / `MERCADOPAGO_WEBHOOK_SECRET` | Credenciais reais/sandbox do Mercado Pago, injetadas no Secret do deployment |
+| `NEW_RELIC_LICENSE_KEY` | Injetada no Secret do deployment |
+
+### Proteção da branch `main`
+
+Configuração manual no GitHub (Settings > Branches): exigir PR antes do merge, exigir que o check `Build, Test & Quality Gate` passe, sem push direto.
