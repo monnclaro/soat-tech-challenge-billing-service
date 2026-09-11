@@ -1,0 +1,64 @@
+# =========================
+# Build results
+# =========================
+bin/
+obj/
+out/
+TestResults/
+
+# =========================
+# Rider / IntelliJ
+# =========================
+.idea/
+*.sln.iml
+*.DotSettings.user
+
+# =========================
+# User-specific files
+# =========================
+*.user
+*.userosscache
+*.suo
+*.rsuser
+
+# =========================
+# Logs
+# =========================
+*.log
+
+# =========================
+# Secrets locais (nunca commitar)
+# =========================
+k8s/secret.local.yaml
+k8s/*.local.yaml
+
+# =========================
+# NuGet
+# =========================
+*.nupkg
+*.snupkg
+packages/
+.nuget/
+
+# =========================
+# .NET Core
+# =========================
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# =========================
+# Visual Studio (sometimes generated)
+# =========================
+.vs/
+
+# =========================
+# OS files
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# Environment files
+# =========================
+.env
