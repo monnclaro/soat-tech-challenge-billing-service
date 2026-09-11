@@ -1,7 +1,11 @@
+using Application.Common.Interfaces;
 using Application.Pagamentos.UseCases.Interfaces;
 using Infrastructure.Database;
 using Infrastructure.DomainEvents;
 using Infrastructure.MercadoPago;
+using Infrastructure.Messaging;
+using Infrastructure.Messaging.Consumers;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.Configuration;
@@ -16,7 +20,8 @@ public static class DependencyInjection
         IConfiguration configuration) =>
         services
             .AddServices(configuration)
-            .AddDatabase(configuration);
+            .AddDatabase(configuration)
+            .AddMessaging(configuration);
 
     private static IServiceCollection AddServices(this IServiceCollection services, IConfiguration configuration)
     {
@@ -44,6 +49,32 @@ public static class DependencyInjection
         services.AddDbContext<BillingServiceDbContext>(options =>
             options.UseNpgsql(connectionString,
                 npgsqlOptions => npgsqlOptions.MigrationsHistoryTable(HistoryRepository.DefaultTableName)));
+
+        return services;
+    }
+
+    private static IServiceCollection AddMessaging(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.Configure<RabbitMqSettings>(configuration.GetSection("RabbitMq"));
+        services.AddScoped<ISagaEventPublisher, MassTransitSagaEventPublisher>();
+
+        var rabbitMq = configuration.GetSection("RabbitMq").Get<RabbitMqSettings>() ?? new RabbitMqSettings();
+
+        services.AddMassTransit(x =>
+        {
+            x.AddConsumer<GerarOrcamentoConsumer>();
+
+            x.UsingRabbitMq((context, cfg) =>
+            {
+                cfg.Host(rabbitMq.Host, rabbitMq.VirtualHost, h =>
+                {
+                    h.Username(rabbitMq.Username);
+                    h.Password(rabbitMq.Password);
+                });
+
+                cfg.ConfigureEndpoints(context);
+            });
+        });
 
         return services;
     }

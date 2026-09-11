@@ -16,6 +16,30 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+    networks:
+      - soat-billing-network
+
+    restart: unless-stopped
+
+  # Para testar a saga completa localmente, aponte RabbitMq__Host deste serviço e do
+  # OS Service/Execução Service para o mesmo broker (rede Docker externa comum, ou um
+  # RabbitMQ único rodando fora do compose de cada serviço) — ver
+  # PLANO-FASE-4-MICROSSERVICOS.md.
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+
+    ports:
+      - "5673:5672"
+      - "15673:15672"
+
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
     networks:
       - soat-billing-network

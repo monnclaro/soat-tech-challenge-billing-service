@@ -75,21 +75,32 @@ pacote .NET mantido pela própria Mercado Pago — https://github.com/mercadopag
    aplicação de teste no painel do Mercado Pago; copie o "Secret Key" gerado para
    `MercadoPago__WebhookSecret`.
 
+## Mensageria (RabbitMQ/MassTransit)
+
+Ligada: um consumer MassTransit (`GerarOrcamentoConsumer`) reage ao comando `GerarOrcamento`
+publicado pelo OS Service, reaproveitando o `GerarOrcamentoUseCase` já existente (mesma regra
+de negócio do endpoint REST interno). Ao concluir, publica `OrcamentoGerado`; ao aprovar ou
+recusar um pagamento (webhook do Mercado Pago), publica `PagamentoAprovado`/`PagamentoRecusado`
+— todos consumidos pelo OS Service para avançar/compensar a saga. Contratos em
+`Soat.Contracts.Saga` (`src/Application/Messaging/Contracts/SagaContracts.cs`), cópia idêntica
+à do OS Service (sem pacote NuGet compartilhado — ver plano).
+
+**Verificado contra infraestrutura real** (RabbitMQ + Postgres locais, sem mocks): um
+publisher standalone simulando o OS Service publicou `GerarOrcamento`, e o consumer
+efetivamente criou o `Orcamento` + itens no Postgres e chamou a API real do Mercado Pago
+(falhou com 401 por não haver um Access Token de sandbox configurado neste teste — a
+integração em si é real, não mockada). Esse teste também revelou uma lacuna de idempotência
+real (retry após falha na chamada ao Mercado Pago reprocessava como "já existe" sem nunca
+criar o Pagamento) — corrigida: `GerarOrcamentoUseCase` agora retoma a partir de um `Orcamento`
+já persistido sem `Pagamento` associado, em vez de tratá-lo como duplicado.
+
 ## Escopo deste scaffold — o que ainda falta (follow-up)
 
-Este PR entrega a Clean Architecture completa e uma integração real (não mockada) com o
-Mercado Pago, mas **a mensageria assíncrona ainda não está ligada**:
-
-- `POST /api/v1/orcamentos` é hoje um **endpoint REST interno/manual** para disparar a
-  geração do orçamento. Na versão final da Fase 4 isto deixa de existir como endpoint e
-  passa a ser um **consumer RabbitMQ/MassTransit** do comando `GerarOrcamento`, publicado
-  pelo OS Service ao consumir o evento `DiagnosticoFinalizado` do Execução Service.
-- Os domain events (`OrcamentoGeradoDomainEvent`, `PagamentoAprovadoDomainEvent`,
-  `PagamentoRecusadoDomainEvent`) existem e são disparados pelas entidades, mas hoje não têm
-  nenhum handler que os publique no barramento — isso é o próximo passo (ver
-  `PLANO-FASE-4-MICROSSERVICOS.md`, seção 8, item 5).
-- Não há Kubernetes manifests nem pipeline de CI/CD neste repositório ainda — também
-  deferidos para uma fase posterior, junto dos outros dois serviços.
+- Não há Kubernetes manifests nem pipeline de CI/CD neste repositório ainda — deferidos para
+  uma fase posterior, junto dos outros dois serviços.
+- Integração com o Mercado Pago não foi exercitada contra uma conta de sandbox real (só
+  contra a API real com token inválido, confirmando que a chamada em si funciona) — falta
+  testar o fluxo completo com credenciais de teste válidas.
 
 ## Banco de dados
 
