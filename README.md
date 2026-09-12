@@ -82,9 +82,9 @@ os dois eventos de volta — não conhece os outros passos da saga (diagnóstico
 |---|---|---|
 | OS Service → Billing (comando) | `GerarOrcamento` | Gera o orçamento + cria a preferência de pagamento no Mercado Pago |
 | Billing → OS Service (evento) | `OrcamentoGerado` | Publicado ao concluir a geração do orçamento |
+| Billing → OS Service (evento) | `PagamentoAprovado` / `PagamentoRecusado` | Publicado a partir do webhook do Mercado Pago — `PagamentoRecusado` é o caminho de compensação da saga (cancela a OS) |
 
 Justificativa completa do desenho da saga (por que a orquestração vive no OS Service, sem um saga state machine separado): [ADR 0001 no repositório do OS Service](https://github.com/monnclaro/soat-tech-challenge-os-service/blob/main/docs/adr/0001-saga-orquestrada-sem-state-machine-separado.md).
-| Billing → OS Service (evento) | `PagamentoAprovado` / `PagamentoRecusado` | Publicado a partir do webhook do Mercado Pago — `PagamentoRecusado` é o caminho de compensação da saga (cancela a OS) |
 
 ## Mensageria (RabbitMQ/MassTransit)
 
@@ -140,6 +140,11 @@ docker compose up --build
 
 API em `http://localhost:8082`, documentação OpenAPI (Scalar) em `/scalar` (ambiente de
 desenvolvimento), health check em `/health`.
+
+Especificação OpenAPI (Swagger) exportada em [`docs/openapi.json`](./docs/openapi.json) —
+importável direto no Postman (File > Import) ou em qualquer ferramenta compatível com
+OpenAPI 3. Com a API rodando localmente, a versão sempre atualizada também fica disponível
+em `/openapi/v1.json`.
 
 ## Testes
 
