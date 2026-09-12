@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Application.Orcamentos.Gateways;
 using global::MercadoPago.Client.Payment;
 using global::MercadoPago.Client.Preference;
@@ -10,6 +11,11 @@ namespace Infrastructure.MercadoPago;
 // AccessToken de sandbox/teste — ver README para instruções de como gerar credenciais de
 // teste no painel do Mercado Pago. Nenhuma chamada aqui é mockada: CriarPreferencia chama
 // de fato o endpoint /checkout/preferences, e BuscarPagamentoPorId chama /v1/payments/{id}.
+// PreferenceClient/PaymentClient (SDK oficial) não expõem nenhuma costura para injetar um
+// HttpClient/HttpMessageHandler fake — testar esta classe de verdade exigiria bater na API
+// real do Mercado Pago (fora do escopo de teste unitário). O contrato IMercadoPagoGateway já
+// é exercitado (mockado) em todos os testes dos use cases que o consomem.
+[ExcludeFromCodeCoverage]
 public class MercadoPagoGateway : IMercadoPagoGateway
 {
     public MercadoPagoGateway(IOptions<MercadoPagoSettings> settings)

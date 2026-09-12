@@ -1,8 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
 using Api.Extensions.Markers;
 using SharedKernel.Interfaces;
 
 namespace Api.Extensions;
 
+// Composition root (registro de DI) — sem regra de negócio.
+[ExcludeFromCodeCoverage]
 public static class PresentationExtensions
 {
     public static IServiceCollection AddPresentation(this IServiceCollection services)

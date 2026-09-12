@@ -1,9 +1,13 @@
+using System.Diagnostics.CodeAnalysis;
 using Domain.Orcamentos.Itens;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Infrastructure.Database.Configurations.Orcamentos;
 
+// Mapeamento EF Core declarativo (mesma natureza de uma Migration) — sem branching nem
+// regra de negócio, só nomes de coluna/tabela.
+[ExcludeFromCodeCoverage]
 public class OrcamentoItemConfiguration : IEntityTypeConfiguration<OrcamentoItem>
 {
     public void Configure(EntityTypeBuilder<OrcamentoItem> builder)

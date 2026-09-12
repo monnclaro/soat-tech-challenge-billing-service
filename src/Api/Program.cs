@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Api.Extensions;
 using Api.Middlewares;
 using Application;
@@ -55,5 +56,7 @@ await app.RunAsync();
 
 // Ponto de ancoragem público para WebApplicationFactory (testes de integração) e
 // NetArchTest (testes de arquitetura) — top-level statements geram um Program
-// internal por padrão.
+// internal por padrão. Composition root puro (bootstrap do host); a atribuição
+// se aplica ao tipo Program inteiro, incluindo o Main gerado pelas top-level statements acima.
+[ExcludeFromCodeCoverage]
 public partial class Program;

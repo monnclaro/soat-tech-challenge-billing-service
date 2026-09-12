@@ -41,8 +41,8 @@ public class OrcamentosController : ControllerBase
     }
 
     // Endpoint interno/manual: dispara a geração do orçamento a partir dos itens do
-    // diagnóstico. A ser substituído por um consumer RabbitMQ/MassTransit do comando
-    // "GerarOrcamento" em um PR de follow-up — ver PLANO-FASE-4-MICROSSERVICOS.md.
+    // diagnóstico. Mantido para depuração/teste manual — em produção, o mesmo fluxo
+    // é disparado pelo consumer RabbitMQ/MassTransit do comando "GerarOrcamento".
     [HttpPost]
     [ProducesResponseType(typeof(OrcamentoOutput), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

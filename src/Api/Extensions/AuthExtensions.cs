@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Infrastructure.Security.Jwt;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -10,6 +11,8 @@ namespace Api.Extensions;
 // (ADR 0005 do monolito de origem) — por isso este extension method é copiado do OS
 // Service, mas o serviço não traz ITokenProvider/JwtTokenProvider (emissão) nem
 // BCryptPasswordHasher/Usuario/Login (não existe autenticação local aqui).
+// Composition root (registro de DI), sem regra de negócio.
+[ExcludeFromCodeCoverage]
 public static class AuthExtensions
 {
     public static IServiceCollection AddJwtAuthentication(

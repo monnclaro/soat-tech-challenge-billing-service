@@ -26,8 +26,7 @@ services:
 
   # Para testar a saga completa localmente, aponte RabbitMq__Host deste serviço e do
   # OS Service/Execução Service para o mesmo broker (rede Docker externa comum, ou um
-  # RabbitMQ único rodando fora do compose de cada serviço) — ver
-  # PLANO-FASE-4-MICROSSERVICOS.md.
+  # RabbitMQ único rodando fora do compose de cada serviço).
   rabbitmq:
     image: rabbitmq:3-management-alpine
 

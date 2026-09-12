@@ -5,10 +5,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Infrastructure.DomainEvents;
 
-// Hoje só entrega os eventos aos handlers já registrados no processo (nenhum ainda —
-// scaffold). Quando a mensageria (RabbitMQ/MassTransit) for ligada em um follow-up, um
-// IDomainEventHandler publicando no barramento passa a existir para OrcamentoGerado/
-// PagamentoAprovado/PagamentoRecusado (ver PLANO-FASE-4-MICROSSERVICOS.md).
+// Entrega os eventos aos handlers registrados no processo — inclui os handlers que
+// publicam no barramento (RabbitMQ/MassTransit) para OrcamentoGerado/PagamentoAprovado/
+// PagamentoRecusado (ver `Application/Pagamentos/EventHandlers`).
 internal sealed class DomainEventsDispatcher(IServiceProvider serviceProvider) : IDomainEventsDispatcher
 {
     private static readonly ConcurrentDictionary<Type, Type> HandlerTypeDictionary = new();

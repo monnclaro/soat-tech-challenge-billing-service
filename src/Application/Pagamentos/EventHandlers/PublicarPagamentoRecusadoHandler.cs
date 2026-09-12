@@ -5,7 +5,7 @@ using Domain.Pagamentos.Events;
 namespace Application.Pagamentos.EventHandlers;
 
 // Compensação da saga: ao recusar o pagamento, publica o evento para o OS Service
-// cancelar a OS — ver PLANO-FASE-4-MICROSSERVICOS.md.
+// cancelar a OS.
 internal sealed class PublicarPagamentoRecusadoHandler : IDomainEventHandler<PagamentoRecusadoDomainEvent>
 {
     private readonly IOrcamentoGateway _orcamentoGateway;

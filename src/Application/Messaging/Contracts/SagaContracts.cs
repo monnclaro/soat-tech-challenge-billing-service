@@ -4,9 +4,9 @@ namespace Soat.Contracts.Saga;
 // os 3 microsserviços (soat-os-service / soat-billing-service /
 // soat-execucao-service) — cada repo mantém sua própria cópia idêntica destes
 // tipos em vez de depender de um pacote NuGet publicado, para evitar a
-// complexidade de autenticação de um feed privado neste estágio do projeto
-// (decisão documentada no PLANO-FASE-4-MICROSSERVICOS.md). São DTOs puros, sem
-// lógica — o único "código compartilhado" real entre os serviços. Vivem na
+// complexidade de autenticação de um feed privado neste estágio do projeto.
+// São DTOs puros, sem lógica — o único "código compartilhado" real entre os
+// serviços. Vivem na
 // camada Application (não Infrastructure) porque os handlers de orquestração
 // da saga (Application) precisam referenciá-los sem violar a regra
 // "Application não depende de Infrastructure".

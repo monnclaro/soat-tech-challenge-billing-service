@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Application.Common.Interfaces;
 using Application.Pagamentos.UseCases.Interfaces;
 using Infrastructure.Database;
@@ -13,6 +14,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Infrastructure;
 
+// Composition root (registro de DI) — sem regra de negócio, coberto indiretamente pelos
+// testes de cada serviço registrado aqui.
+[ExcludeFromCodeCoverage]
 public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(

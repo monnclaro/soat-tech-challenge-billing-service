@@ -1,9 +1,13 @@
+using System.Diagnostics.CodeAnalysis;
 using Domain.Pagamentos;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Infrastructure.Database.Configurations.Pagamentos;
 
+// Mapeamento EF Core declarativo (mesma natureza de uma Migration) — sem branching nem
+// regra de negócio, só nomes de coluna/tabela.
+[ExcludeFromCodeCoverage]
 public class PagamentoConfiguration : IEntityTypeConfiguration<Pagamento>
 {
     public void Configure(EntityTypeBuilder<Pagamento> builder)

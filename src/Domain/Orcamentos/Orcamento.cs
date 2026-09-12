@@ -50,7 +50,7 @@ public class Orcamento : Entity
     }
 
     // Consumido a partir da confirmação de pagamento recusado (webhook do Mercado Pago) —
-    // caminho de compensação da saga (ver PLANO-FASE-4-MICROSSERVICOS.md).
+    // caminho de compensação da saga.
     public void Reprovar()
     {
         if (Status != StatusOrcamento.Pendente)

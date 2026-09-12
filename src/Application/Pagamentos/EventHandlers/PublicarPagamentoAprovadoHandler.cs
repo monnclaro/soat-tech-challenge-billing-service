@@ -5,9 +5,9 @@ using Domain.Pagamentos.Events;
 namespace Application.Pagamentos.EventHandlers;
 
 // Passo 5 -> 6 da saga: ao aprovar o pagamento (webhook do Mercado Pago), publica o
-// evento para o OS Service avançar (comandar IniciarExecucao no Execução Service) —
-// ver PLANO-FASE-4-MICROSSERVICOS.md. O domain event só carrega IdOrcamento; busca o
-// Orcamento para obter o IdOrdemServico que a saga precisa.
+// evento para o OS Service avançar (comandar IniciarExecucao no Execução Service).
+// O domain event só carrega IdOrcamento; busca o Orcamento para obter o
+// IdOrdemServico que a saga precisa.
 internal sealed class PublicarPagamentoAprovadoHandler : IDomainEventHandler<PagamentoAprovadoDomainEvent>
 {
     private readonly IOrcamentoGateway _orcamentoGateway;

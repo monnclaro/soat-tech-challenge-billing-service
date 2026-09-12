@@ -5,9 +5,6 @@ microsserviços da Fase 4 do Tech Challenge (FIAP). Extraído do monolito
 [`soat-tech-challenge`](https://github.com/monnclaro/soat-tech-challenge) — o conceito de
 Orçamento/Pagamento é novo, não existia no monolito original.
 
-Plano completo da migração (arquitetura, saga, infraestrutura, ordem de execução):
-[`PLANO-FASE-4-MICROSSERVICOS.md`](../PLANO-FASE-4-MICROSSERVICOS.md) na raiz do workspace.
-
 ## Responsabilidades
 
 - Gerar o orçamento de uma ordem de serviço a partir dos itens identificados no diagnóstico.
@@ -75,15 +72,33 @@ pacote .NET mantido pela própria Mercado Pago — https://github.com/mercadopag
    aplicação de teste no painel do Mercado Pago; copie o "Secret Key" gerado para
    `MercadoPago__WebhookSecret`.
 
+## Papel na saga
+
+O OS Service é o orquestrador: seu próprio agregado `OrdemServico` guarda o estado da saga e
+reage a domain events publicando comandos. Este serviço só reage ao comando abaixo e publica
+os dois eventos de volta — não conhece os outros passos da saga (diagnóstico, execução):
+
+| Direção | Mensagem | Efeito neste serviço |
+|---|---|---|
+| OS Service → Billing (comando) | `GerarOrcamento` | Gera o orçamento + cria a preferência de pagamento no Mercado Pago |
+| Billing → OS Service (evento) | `OrcamentoGerado` | Publicado ao concluir a geração do orçamento |
+
+Justificativa completa do desenho da saga (por que a orquestração vive no OS Service, sem um saga state machine separado): [ADR 0001 no repositório do OS Service](https://github.com/monnclaro/soat-tech-challenge-os-service/blob/main/docs/adr/0001-saga-orquestrada-sem-state-machine-separado.md).
+| Billing → OS Service (evento) | `PagamentoAprovado` / `PagamentoRecusado` | Publicado a partir do webhook do Mercado Pago — `PagamentoRecusado` é o caminho de compensação da saga (cancela a OS) |
+
 ## Mensageria (RabbitMQ/MassTransit)
 
-Ligada: um consumer MassTransit (`GerarOrcamentoConsumer`) reage ao comando `GerarOrcamento`
+Um consumer MassTransit (`GerarOrcamentoConsumer`) reage ao comando `GerarOrcamento`
 publicado pelo OS Service, reaproveitando o `GerarOrcamentoUseCase` já existente (mesma regra
-de negócio do endpoint REST interno). Ao concluir, publica `OrcamentoGerado`; ao aprovar ou
-recusar um pagamento (webhook do Mercado Pago), publica `PagamentoAprovado`/`PagamentoRecusado`
-— todos consumidos pelo OS Service para avançar/compensar a saga. Contratos em
-`Soat.Contracts.Saga` (`src/Application/Messaging/Contracts/SagaContracts.cs`), cópia idêntica
-à do OS Service (sem pacote NuGet compartilhado — ver plano).
+de negócio do endpoint REST interno — nenhuma lógica duplicada entre a via HTTP e a via
+mensageria). Ao concluir, publica `OrcamentoGerado`; ao aprovar ou recusar um pagamento
+(webhook do Mercado Pago), publica `PagamentoAprovado`/`PagamentoRecusado` — todos consumidos
+pelo OS Service para avançar/compensar a saga. Contratos em `Soat.Contracts.Saga`
+(`src/Application/Messaging/Contracts/SagaContracts.cs`), cópia idêntica à dos outros dois
+serviços — mantida por convenção em cada repo em vez de um pacote NuGet compartilhado, para
+evitar a complexidade de um feed privado nesta fase do projeto (são DTOs puros, marcados com
+as interfaces `ISagaCommand`/`ISagaEvent` para deixar explícito no próprio tipo se é um
+comando ou um evento da saga).
 
 **Verificado contra infraestrutura real** (RabbitMQ + Postgres locais, sem mocks): um
 publisher standalone simulando o OS Service publicou `GerarOrcamento`, e o consumer
@@ -94,13 +109,13 @@ real (retry após falha na chamada ao Mercado Pago reprocessava como "já existe
 criar o Pagamento) — corrigida: `GerarOrcamentoUseCase` agora retoma a partir de um `Orcamento`
 já persistido sem `Pagamento` associado, em vez de tratá-lo como duplicado.
 
-## Escopo deste scaffold — o que ainda falta (follow-up)
+## Escopo — o que ainda fica de fora deste repositório
 
-- Não há Kubernetes manifests nem pipeline de CI/CD neste repositório ainda — deferidos para
-  uma fase posterior, junto dos outros dois serviços.
 - Integração com o Mercado Pago não foi exercitada contra uma conta de sandbox real (só
   contra a API real com token inválido, confirmando que a chamada em si funciona) — falta
   testar o fluxo completo com credenciais de teste válidas.
+- Testes de integração com Testcontainers (Postgres) — os testes hoje são unitários
+  (domínio + Application com Moq) e de arquitetura.
 
 ## Banco de dados
 

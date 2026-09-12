@@ -12,8 +12,7 @@ namespace Infrastructure.Messaging.Consumers;
 
 // Consome o comando publicado pelo OS Service ao concluir o registro do diagnóstico,
 // reaproveitando o mesmo GerarOrcamentoUseCase usado pelo endpoint interno equivalente
-// (única fonte de verdade da regra de negócio, independente do meio de entrada) — ver
-// PLANO-FASE-4-MICROSSERVICOS.md.
+// (única fonte de verdade da regra de negócio, independente do meio de entrada).
 public class GerarOrcamentoConsumer : IConsumer<GerarOrcamento>
 {
     private readonly IOrcamentoGateway _orcamentoGateway;

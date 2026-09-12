@@ -1,9 +1,13 @@
+using System.Diagnostics.CodeAnalysis;
 using Application.Common.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using SharedKernel.Interfaces;
 
 namespace Application;
 
+// Composition root (registro de DI) — sem regra de negócio, coberto indiretamente pelos
+// testes de cada use case/handler registrado aqui.
+[ExcludeFromCodeCoverage]
 public static class DependencyInjection
 {
     public static IServiceCollection AddApplication(this IServiceCollection services)

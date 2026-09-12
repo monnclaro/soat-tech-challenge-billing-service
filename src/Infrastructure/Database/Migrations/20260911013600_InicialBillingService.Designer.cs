@@ -11,6 +11,10 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 namespace Infrastructure.Database.Migrations
 {
+    // Gerado automaticamente pelo EF Core — snapshot de schema, sem lógica de negócio.
+    // [ExcludeFromCodeCoverage] já aplicado na outra parte parcial desta classe
+    // (20260911013600_InicialBillingService.cs) — atributos de partes parciais são
+    // combinados pelo compilador no tipo final, repeti-lo aqui geraria CS0579.
     [DbContext(typeof(BillingServiceDbContext))]
     [Migration("20260911013600_InicialBillingService")]
     partial class InicialBillingService
