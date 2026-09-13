@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: soat-billing-api
+  namespace: soat-billing
+
+spec:
+  replicas: 1
+
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+
+  selector:
+    matchLabels:
+      app: soat-billing-api
+
+  template:
+    metadata:
+      labels:
+        app: soat-billing-api
+
+    spec:
+      initContainers:
+        - name: newrelic-instrumentation
+          image: newrelic/newrelic-dotnet-init:latest
+          command: ["cp", "-r", "/instrumentation/.", "/newrelic-instrumentation/"]
+          volumeMounts:
+            - mountPath: /newrelic-instrumentation
+              name: newrelic-instrumentation
+
+      containers:
+        - name: soat-billing-api
+
+          image: ${ECR_IMAGE}
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - containerPort: 8080
+
+          envFrom:
+            - configMapRef:
+                name: soat-billing-api-config
+
+            - secretRef:
+                name: soat-billing-api-secret
+
+          volumeMounts:
+            - mountPath: /newrelic-instrumentation
+              name: newrelic-instrumentation
+
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 20
+
+          resources:
+            requests:
+              memory: "192Mi"
+              cpu: "150m"
+
+            limits:
+              memory: "384Mi"
+              cpu: "350m"
+
+      volumes:
+        - name: newrelic-instrumentation
+          emptyDir: {}

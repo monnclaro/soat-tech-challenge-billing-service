@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+
+metadata:
+  name: soat-billing-api-service
+  namespace: soat-billing
+
+spec:
+  selector:
+    app: soat-billing-api
+
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+      nodePort: 30082
+
+  # NodePort, não ALB — mesma decisão de custo do OS Service / monolito de origem.
+  # O repositório lambda ganha uma rota por serviço, esta apontando para 30082.
+  type: NodePort

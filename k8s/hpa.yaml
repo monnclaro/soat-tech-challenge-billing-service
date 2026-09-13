@@ -1,0 +1,33 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+
+metadata:
+  name: soat-billing-api-hpa
+  namespace: soat-billing
+
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: soat-billing-api
+
+  # Reduzido frente ao padrão do monolito (2/2-10): 3 microsserviços compartilham o
+  # mesmo node group t3.small (ver ADR do OS Service / infra-k8s atualizado com
+  # min 2 nós para compensar).
+  minReplicas: 1
+  maxReplicas: 3
+
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
