@@ -46,6 +46,6 @@ public class ExceptionHandlerMiddleware
         ctx.Response.ContentType = "application/json";
 
         var body = JsonSerializer.Serialize(new { erro = mensagem });
-        return ctx.Response.WriteAsync(body);
+        return ctx.Response.WriteAsync(body, ctx.RequestAborted);
     }
 }
