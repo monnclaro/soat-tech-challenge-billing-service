@@ -118,14 +118,6 @@ real (retry após falha na chamada ao Mercado Pago reprocessava como "já existe
 criar o Pagamento) — corrigida: `GerarOrcamentoUseCase` agora retoma a partir de um `Orcamento`
 já persistido sem `Pagamento` associado, em vez de tratá-lo como duplicado.
 
-## Escopo — o que ainda fica de fora deste repositório
-
-- Integração com o Mercado Pago não foi exercitada contra uma conta de sandbox real (só
-  contra a API real com token inválido, confirmando que a chamada em si funciona) — falta
-  testar o fluxo completo com credenciais de teste válidas.
-- Testes de integração com Testcontainers (Postgres) — os testes hoje são unitários
-  (domínio + Application com Moq) e de arquitetura.
-
 ## Banco de dados
 
 PostgreSQL (`soat_billing`) — banco lógico próprio, isolado do banco do OS Service (nenhum
