@@ -34,13 +34,12 @@ public class WebhooksController : ControllerBase
         [FromBody] MercadoPagoWebhookRequest? body,
         [FromQuery(Name = "data.id")] string? dataIdQuery,
         [FromQuery] string? type,
+        [FromHeader(Name = "x-signature")] string? xSignature,
+        [FromHeader(Name = "x-request-id")] string? xRequestId,
         CancellationToken ct)
     {
         var tipo = body?.Type ?? body?.Action ?? type;
         var dataId = body?.Data?.Id ?? dataIdQuery;
-
-        var xSignature = Request.Headers["x-signature"].ToString();
-        var xRequestId = Request.Headers["x-request-id"].ToString();
 
         await _controller.RegistrarWebhook(new RegistrarWebhookPagamentoInput(tipo, dataId, xSignature, xRequestId), ct);
         return _presenter.Result!;

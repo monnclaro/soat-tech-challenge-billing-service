@@ -89,7 +89,9 @@ jobs:
 
       - name: Login no ECR
         id: ecr
-        uses: aws-actions/amazon-ecr-login@v2
+        # Pinado por SHA completo (não @v2, tag mutável) — evita que uma tag
+        # comprometida/re-apontada injete código na pipeline (ver regra do SonarCloud).
+        uses: aws-actions/amazon-ecr-login@03f1aad4c6c7ffd436567f42f9384779290529bd # v2.1.7
 
       - name: Build e push da imagem
         id: build
@@ -108,6 +110,12 @@ jobs:
         run: kubectl apply -f k8s/namespace.yaml
 
       - name: Gerar Secret a partir do SSM Parameter Store (RDS + JWT + RabbitMQ + Mercado Pago)
+        # Secrets via env (não interpolados direto no script) — evita expandi-los como
+        # texto no shell (ver regra do SonarCloud).
+        env:
+          MERCADOPAGO_ACCESS_TOKEN: ${{ secrets.MERCADOPAGO_ACCESS_TOKEN }}
+          MERCADOPAGO_WEBHOOK_SECRET: ${{ secrets.MERCADOPAGO_WEBHOOK_SECRET }}
+          NEW_RELIC_LICENSE_KEY: ${{ secrets.NEW_RELIC_LICENSE_KEY }}
         run: |
           DB_ENDPOINT=$(aws ssm get-parameter --name "/soat/${ENVIRONMENT}/rds/endpoint" --query Parameter.Value --output text)
           DB_USER=$(aws ssm get-parameter --name "/soat/${ENVIRONMENT}/rds/username" --query Parameter.Value --output text)
@@ -122,14 +130,14 @@ jobs:
             --from-literal=ConnectionStrings__Default="Host=$DB_ENDPOINT;Port=5432;Database=soat_billing;Username=$DB_USER;Password=$DB_PASSWORD" \
             --from-literal=JwtSettings__Secret="$JWT_SECRET" \
             --from-literal=JwtSettings__ExpirationHours="2" \
-            --from-literal=MercadoPago__AccessToken="${{ secrets.MERCADOPAGO_ACCESS_TOKEN }}" \
-            --from-literal=MercadoPago__WebhookSecret="${{ secrets.MERCADOPAGO_WEBHOOK_SECRET }}" \
+            --from-literal=MercadoPago__AccessToken="$MERCADOPAGO_ACCESS_TOKEN" \
+            --from-literal=MercadoPago__WebhookSecret="$MERCADOPAGO_WEBHOOK_SECRET" \
             --from-literal=MercadoPago__NotificationUrl="http://${NODE_IP}:30082/api/v1/webhooks/mercadopago" \
             --from-literal=RabbitMq__Host="$RABBITMQ_HOST" \
             --from-literal=RabbitMq__VirtualHost="/" \
             --from-literal=RabbitMq__Username="$RABBITMQ_USER" \
             --from-literal=RabbitMq__Password="$RABBITMQ_PASSWORD" \
-            --from-literal=NEW_RELIC_LICENSE_KEY="${{ secrets.NEW_RELIC_LICENSE_KEY }}" \
+            --from-literal=NEW_RELIC_LICENSE_KEY="$NEW_RELIC_LICENSE_KEY" \
             --dry-run=client -o yaml | kubectl apply -f -
 
       - name: Aplicar manifests
