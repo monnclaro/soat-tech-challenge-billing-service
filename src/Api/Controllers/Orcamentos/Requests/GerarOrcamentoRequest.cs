@@ -8,9 +8,9 @@ namespace Api.Controllers.Orcamentos.Requests;
 // RabbitMQ/MassTransit do comando "GerarOrcamento" (publicado pelo OS Service ao
 // consumir o evento DiagnosticoFinalizado do Execução Service).
 public record GerarOrcamentoRequest(
-    [property: JsonPropertyName("idOrdemServico")] Guid IdOrdemServico,
+    [property: JsonPropertyName("idOrdemServico"), JsonRequired] Guid IdOrdemServico,
     [property: JsonPropertyName("itens")] List<ItemOrcamentoRequest> Itens,
-    [property: JsonPropertyName("valorTotal")] decimal ValorTotal);
+    [property: JsonPropertyName("valorTotal"), JsonRequired] decimal ValorTotal);
 
 public record ItemOrcamentoRequest(
     [property: JsonPropertyName("idItemOrigem")] Guid IdItemOrigem,

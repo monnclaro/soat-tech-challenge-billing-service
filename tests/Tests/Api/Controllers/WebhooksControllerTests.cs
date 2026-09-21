@@ -51,7 +51,7 @@ public class WebhooksControllerTests
         var controller = CriarController();
         var body = new MercadoPagoWebhookRequest("payment", null, new MercadoPagoWebhookDataRequest("123"));
 
-        var resultado = await controller.Receber(body, null, null, CancellationToken.None);
+        var resultado = await controller.Receber(body, null, null, null, null, CancellationToken.None);
 
         resultado.Should().BeOfType<OkResult>();
     }
@@ -65,7 +65,7 @@ public class WebhooksControllerTests
 
         var controller = CriarController();
 
-        var resultado = await controller.Receber(null, "data-id-da-query", "payment", CancellationToken.None);
+        var resultado = await controller.Receber(null, "data-id-da-query", "payment", null, null, CancellationToken.None);
 
         resultado.Should().BeOfType<OkResult>();
         _mercadoPagoGateway.Verify(g => g.BuscarPagamentoPorId("data-id-da-query", It.IsAny<CancellationToken>()), Times.Once);
@@ -76,7 +76,7 @@ public class WebhooksControllerTests
     {
         var controller = CriarController();
 
-        var resultado = await controller.Receber(null, null, null, CancellationToken.None);
+        var resultado = await controller.Receber(null, null, null, null, null, CancellationToken.None);
 
         resultado.Should().BeOfType<BadRequestObjectResult>();
     }
