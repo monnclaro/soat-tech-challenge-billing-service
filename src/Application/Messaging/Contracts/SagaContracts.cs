@@ -58,11 +58,21 @@ public record DiagnosticoFinalizado(
 public record DiagnosticoFalhou(Guid IdOrdemServico, string Motivo) : ISagaEvent;
 public record ExecucaoFinalizada(Guid IdOrdemServico) : ISagaEvent;
 
+// Compensação: falha durante a execução (ex.: peça indisponível), depois do
+// diagnóstico já ter sido finalizado — diferente de DiagnosticoFalhou, que
+// cobre a falha ainda na fase de diagnóstico.
+public record ExecucaoFalhou(Guid IdOrdemServico, string Motivo) : ISagaEvent;
+
 #endregion
 
 #region Eventos — Billing Service -> OS Service
 
 public record OrcamentoGerado(Guid IdOrdemServico, Guid IdOrcamento, decimal ValorTotal, string LinkPagamento) : ISagaEvent;
+
+// Compensação: falha ao gerar o orçamento (ex.: Mercado Pago fora do ar) — diferente
+// de PagamentoRecusado, que só existe depois de um orçamento já ter sido gerado.
+public record OrcamentoFalhou(Guid IdOrdemServico, string Motivo) : ISagaEvent;
+
 public record PagamentoAprovado(Guid IdOrdemServico, Guid IdPagamento) : ISagaEvent;
 public record PagamentoRecusado(Guid IdOrdemServico, Guid IdPagamento, string Motivo) : ISagaEvent;
 

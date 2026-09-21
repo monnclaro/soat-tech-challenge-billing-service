@@ -156,4 +156,30 @@ public class GerarOrcamentoUseCaseTests
         _outputPort.Verify(o => o.Ok(It.Is<OrcamentoOutput>(output => output.Id == orcamentoExistente.Id)), Times.Once);
         _outputPort.Verify(o => o.OrcamentoJaExiste(It.IsAny<string>()), Times.Never);
     }
+
+    [Fact]
+    public async Task Execute_QuandoMercadoPagoFalha_DevePublicarOrcamentoFalhouENaoSalvarPagamento()
+    {
+        // Caminho de compensação: se a chamada ao Mercado Pago falhar (rede, API fora do
+        // ar), a saga precisa ser avisada (OrcamentoFalhou) para o OS Service cancelar a OS
+        // — em vez de deixar a mensagem cair silenciosamente na fila de erro do RabbitMQ.
+        var idOrdemServico = Guid.NewGuid();
+        var input = new GerarOrcamentoInput(idOrdemServico, ItensValidos(), 200m);
+
+        _orcamentoGateway.Setup(g => g.BuscarPorIdOrdemServico(idOrdemServico, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Orcamento?)null);
+
+        _mercadoPagoGateway.Setup(g => g.CriarPreferencia(It.IsAny<CriarPreferenciaInput>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new HttpRequestException("Mercado Pago indisponível"));
+
+        await CriarUseCase().Execute(input);
+
+        _sagaEventPublisher.Verify(p => p.PublicarOrcamentoFalhou(idOrdemServico, It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+        _outputPort.Verify(o => o.Falha(It.IsAny<string>()), Times.Once);
+        _outputPort.Verify(o => o.Ok(It.IsAny<OrcamentoOutput>()), Times.Never);
+
+        // O Orcamento já persistido não é desfeito — fica disponível para retomada manual.
+        _pagamentoGateway.Verify(g => g.Salvar(It.IsAny<Pagamento>(), It.IsAny<CancellationToken>()), Times.Never);
+        _sagaEventPublisher.Verify(p => p.PublicarOrcamentoGerado(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
 }

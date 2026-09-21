@@ -57,6 +57,12 @@ public class GerarOrcamentoConsumer : IConsumer<GerarOrcamento>
         public string? ValorDivergenteMensagem { get; private set; }
         public void ValorDivergente(string mensagem) => ValorDivergenteMensagem = mensagem;
         public void OrcamentoJaExiste(string mensagem) { }
+
+        // Falha ao chamar o Mercado Pago já foi tratada dentro do use case (publica
+        // OrcamentoFalhou e compensa a saga) — não é um erro de mensageria, a mensagem
+        // deve ser considerada processada com sucesso, sem retry/fila de erro.
+        public void Falha(string mensagem) { }
+
         public void Ok(OrcamentoOutput output) { }
     }
 }

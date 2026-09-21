@@ -68,11 +68,27 @@ public class GerarOrcamentoUseCase : IUseCase
             await _orcamentoGateway.Salvar(orcamento, ct);
         }
 
-        var preferencia = await _mercadoPagoGateway.CriarPreferencia(
-            new CriarPreferenciaInput(
-                input.IdOrdemServico,
-                orcamento.Itens.Select(i => new ItemPreferenciaInput(i.NomeItem, i.Valor)).ToList()),
-            ct);
+        PreferenciaCriadaOutput preferencia;
+        try
+        {
+            preferencia = await _mercadoPagoGateway.CriarPreferencia(
+                new CriarPreferenciaInput(
+                    input.IdOrdemServico,
+                    orcamento.Itens.Select(i => new ItemPreferenciaInput(i.NomeItem, i.Valor)).ToList()),
+                ct);
+        }
+        catch (Exception ex)
+        {
+            // Fronteira com o Mercado Pago (rede, API fora do ar, credenciais inválidas) —
+            // nunca deixa a mensagem morrer silenciosamente sem sinalizar a saga: publica a
+            // falha para o OS Service cancelar a OS (compensação), em vez de deixar a
+            // mensagem cair na fila de erro do RabbitMQ sem nenhuma reação. O Orcamento já
+            // persistido continua ali, sem Pagamento — se o problema for corrigido, reprocessar
+            // manualmente a mesma mensagem retoma daqui (ver o branch de retomada acima).
+            await _sagaEventPublisher.PublicarOrcamentoFalhou(input.IdOrdemServico, ex.Message, ct);
+            _outputPort.Falha($"Falha ao gerar a preferência de pagamento no Mercado Pago: {ex.Message}");
+            return;
+        }
 
         var pagamento = new Pagamento();
         pagamento.Criar(orcamento.Id, preferencia.PreferenceId, orcamento.ValorTotal);

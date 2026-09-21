@@ -47,6 +47,7 @@ public class OrcamentosController : ControllerBase
     [ProducesResponseType(typeof(OrcamentoOutput), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(StatusCodes.Status502BadGateway)]
     public async Task<IActionResult> Gerar([FromBody] GerarOrcamentoRequest request, CancellationToken ct)
     {
         var itens = request.Itens

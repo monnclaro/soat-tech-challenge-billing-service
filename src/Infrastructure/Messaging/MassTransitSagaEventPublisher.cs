@@ -16,6 +16,9 @@ public class MassTransitSagaEventPublisher : ISagaEventPublisher
     public Task PublicarOrcamentoGerado(Guid idOrdemServico, Guid idOrcamento, decimal valorTotal, string linkPagamento, CancellationToken ct = default) =>
         _publishEndpoint.Publish(new OrcamentoGerado(idOrdemServico, idOrcamento, valorTotal, linkPagamento), ct);
 
+    public Task PublicarOrcamentoFalhou(Guid idOrdemServico, string motivo, CancellationToken ct = default) =>
+        _publishEndpoint.Publish(new OrcamentoFalhou(idOrdemServico, motivo), ct);
+
     public Task PublicarPagamentoAprovado(Guid idOrdemServico, Guid idPagamento, CancellationToken ct = default) =>
         _publishEndpoint.Publish(new PagamentoAprovado(idOrdemServico, idPagamento), ct);
 

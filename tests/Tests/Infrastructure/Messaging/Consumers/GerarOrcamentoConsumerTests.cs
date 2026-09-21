@@ -120,4 +120,30 @@ public class GerarOrcamentoConsumerTests
         await acao.Should().NotThrowAsync();
         _mercadoPagoGateway.Verify(g => g.CriarPreferencia(It.IsAny<CriarPreferenciaInput>(), It.IsAny<CancellationToken>()), Times.Never);
     }
+
+    [Fact]
+    public async Task Consume_QuandoMercadoPagoFalha_NaoDeveLancarExcecaoEDevePublicarOrcamentoFalhou()
+    {
+        // A falha já é tratada dentro do use case (publica OrcamentoFalhou e compensa a
+        // saga) — o consumer não deve relançar, senão o MassTransit trataria como falha de
+        // entrega/retry por cima de uma falha que já foi comunicada à saga.
+        var idOrdemServico = Guid.NewGuid();
+        var mensagem = new GerarOrcamento(
+            idOrdemServico,
+            [new ItemServicoDiagnosticado(Guid.NewGuid(), "Alinhamento", 100m)],
+            [],
+            100m);
+
+        _orcamentoGateway.Setup(g => g.BuscarPorIdOrdemServico(idOrdemServico, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Orcamento?)null);
+        _mercadoPagoGateway.Setup(g => g.CriarPreferencia(It.IsAny<CriarPreferenciaInput>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new HttpRequestException("Mercado Pago indisponível"));
+
+        var contexto = CriarContexto(mensagem);
+
+        var acao = async () => await CriarConsumer().Consume(contexto.Object);
+
+        await acao.Should().NotThrowAsync();
+        _sagaEventPublisher.Verify(p => p.PublicarOrcamentoFalhou(idOrdemServico, It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
 }

@@ -1,6 +1,7 @@
 using Api.Presenters.Orcamentos;
 using Application.Orcamentos.UseCases;
 using FluentAssertions;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Tests.Api.Presenters;
@@ -25,6 +26,17 @@ public class GerarOrcamentoPresenterTests
         presenter.OrcamentoJaExiste("já existe");
 
         presenter.Result.Should().BeOfType<ConflictObjectResult>();
+    }
+
+    [Fact]
+    public void Falha_DeveRetornarBadGateway()
+    {
+        var presenter = new GerarOrcamentoPresenter();
+
+        presenter.Falha("Mercado Pago indisponível");
+
+        presenter.Result.Should().BeOfType<ObjectResult>()
+            .Which.StatusCode.Should().Be(StatusCodes.Status502BadGateway);
     }
 
     [Fact]
