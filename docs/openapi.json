@@ -255,6 +255,12 @@
                 }
               }
             }
+          },
+          "502": {
+            "description": "Bad Gateway",
+            "content": {
+              "application/json": { }
+            }
           }
         }
       }

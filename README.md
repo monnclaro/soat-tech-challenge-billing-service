@@ -1,5 +1,9 @@
 # SOAT — Billing Service
 
+[![CI/CD](https://github.com/monnclaro/soat-tech-challenge-billing-service/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/monnclaro/soat-tech-challenge-billing-service/actions/workflows/ci-cd.yml)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=soat-tech-challenge-billing-service&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=soat-tech-challenge-billing-service)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=soat-tech-challenge-billing-service&metric=coverage)](https://sonarcloud.io/summary/new_code?id=soat-tech-challenge-billing-service)
+
 Microsserviço responsável por **orçamento e pagamento** dentro da arquitetura de
 microsserviços da Fase 4 do Tech Challenge (FIAP). Extraído do monolito
 [`soat-tech-challenge`](https://github.com/monnclaro/soat-tech-challenge) — o conceito de
@@ -29,6 +33,8 @@ src/
 
 Regras de dependência entre camadas garantidas por testes de arquitetura (NetArchTest) em
 `tests/Tests/Camadas`.
+
+Documentação completa (diagramas de camadas, modelo de domínio, máquina de estados, fluxo de geração de orçamento/pagamento, mensageria): [docs/architecture.md](./docs/architecture.md).
 
 ### Entidades
 
@@ -82,6 +88,7 @@ os dois eventos de volta — não conhece os outros passos da saga (diagnóstico
 |---|---|---|
 | OS Service → Billing (comando) | `GerarOrcamento` | Gera o orçamento + cria a preferência de pagamento no Mercado Pago |
 | Billing → OS Service (evento) | `OrcamentoGerado` | Publicado ao concluir a geração do orçamento |
+| Billing → OS Service (evento) | `OrcamentoFalhou` | **Compensação**: publicado se a chamada ao Mercado Pago falhar (rede, API fora do ar) — o OS Service cancela a OS em vez de ficar esperando um orçamento que nunca chega |
 | Billing → OS Service (evento) | `PagamentoAprovado` / `PagamentoRecusado` | Publicado a partir do webhook do Mercado Pago — `PagamentoRecusado` é o caminho de compensação da saga (cancela a OS) |
 
 Justificativa completa do desenho da saga (por que a orquestração vive no OS Service, sem um saga state machine separado): [ADR 0001 no repositório do OS Service](https://github.com/monnclaro/soat-tech-challenge-os-service/blob/main/docs/adr/0001-saga-orquestrada-sem-state-machine-separado.md).
@@ -91,9 +98,11 @@ Justificativa completa do desenho da saga (por que a orquestração vive no OS S
 Um consumer MassTransit (`GerarOrcamentoConsumer`) reage ao comando `GerarOrcamento`
 publicado pelo OS Service, reaproveitando o `GerarOrcamentoUseCase` já existente (mesma regra
 de negócio do endpoint REST interno — nenhuma lógica duplicada entre a via HTTP e a via
-mensageria). Ao concluir, publica `OrcamentoGerado`; ao aprovar ou recusar um pagamento
-(webhook do Mercado Pago), publica `PagamentoAprovado`/`PagamentoRecusado` — todos consumidos
-pelo OS Service para avançar/compensar a saga. Contratos em `Soat.Contracts.Saga`
+mensageria). Ao concluir, publica `OrcamentoGerado`; se a chamada ao Mercado Pago lançar
+exceção, publica `OrcamentoFalhou` em vez de deixar a mensagem cair na fila de erro do
+RabbitMQ sem nenhuma reação (compensação — ver "Papel na saga" acima); ao aprovar ou recusar
+um pagamento (webhook do Mercado Pago), publica `PagamentoAprovado`/`PagamentoRecusado` —
+todos consumidos pelo OS Service para avançar/compensar a saga. Contratos em `Soat.Contracts.Saga`
 (`src/Application/Messaging/Contracts/SagaContracts.cs`), cópia idêntica à dos outros dois
 serviços — mantida por convenção em cada repo em vez de um pacote NuGet compartilhado, para
 evitar a complexidade de um feed privado nesta fase do projeto (são DTOs puros, marcados com
@@ -146,14 +155,33 @@ importável direto no Postman (File > Import) ou em qualquer ferramenta compatí
 OpenAPI 3. Com a API rodando localmente, a versão sempre atualizada também fica disponível
 em `/openapi/v1.json`.
 
-## Testes
+## Testes e cobertura
 
 ```bash
 dotnet test
 ```
 
-Cobre: regras de arquitetura (NetArchTest, `tests/Tests/Camadas`) e transições de estado das
-entidades `Orcamento`/`Pagamento` (xUnit + FluentAssertions, `tests/Tests/Domain`).
+Cobre: regras de arquitetura (NetArchTest, `tests/Tests/Camadas`), transições de estado das
+entidades `Orcamento`/`Pagamento` (xUnit + FluentAssertions), e os use cases/consumers/presenters
+da Application/Infrastructure/Api (Moq) — incluindo os 3 ramos de idempotência de
+`GerarOrcamentoUseCase` e o caminho de compensação `OrcamentoFalhou`.
+
+### Evidência de cobertura
+
+**122/122 testes passando**, gerado localmente com Coverlet
+(`dotnet test -p:CollectCoverage=true -p:CoverletOutputFormat=opencover`):
+
+| Módulo | Linha | Branch | Método |
+|---|---|---|---|
+| Api | 99,16% | 92% | 98% |
+| Application | 94,02% | 100% | 82,35% |
+| Domain | 91,3% | 92,3% | 84,61% |
+| Infrastructure | 94,16% | 100% | 84,9% |
+| SharedKernel | 100% | 100% | 100% |
+| **Total** | **94,54%** | **96,33%** | **86,66%** |
+
+Cobertura contínua nos badges no topo deste README e no
+[dashboard do SonarCloud](https://sonarcloud.io/summary/new_code?id=soat-tech-challenge-billing-service).
 
 ## CI/CD
 
