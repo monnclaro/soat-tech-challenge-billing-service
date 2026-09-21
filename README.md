@@ -1,8 +1,7 @@
 # SOAT — Billing Service
 
-[![CI/CD](https://github.com/monnclaro/soat-tech-challenge-billing-service/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/monnclaro/soat-tech-challenge-billing-service/actions/workflows/ci-cd.yml)
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=soat-tech-challenge-billing-service&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=soat-tech-challenge-billing-service)
-[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=soat-tech-challenge-billing-service&metric=coverage)](https://sonarcloud.io/summary/new_code?id=soat-tech-challenge-billing-service)
+[![Quality gate status](https://sonarcloud.io/api/project_badges/measure?project=soat-tech-challenge-billing-service&metric=alert_status&token=10f43ffbfb9c96c911f95ff61889a5cf6488aecc)](https://sonarcloud.io/summary/new_code?id=soat-tech-challenge-billing-service)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=soat-tech-challenge-billing-service&metric=coverage&token=10f43ffbfb9c96c911f95ff61889a5cf6488aecc)](https://sonarcloud.io/summary/new_code?id=soat-tech-challenge-billing-service)
 
 Microsserviço responsável por **orçamento e pagamento** dentro da arquitetura de
 microsserviços da Fase 4 do Tech Challenge (FIAP). Extraído do monolito
