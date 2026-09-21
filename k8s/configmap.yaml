@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  name: soat-billing-api-config
+  namespace: soat-billing
+
+data:
+  ASPNETCORE_ENVIRONMENT: "Production"
+
+  # ConnectionStrings__Default, JwtSettings__Secret, MercadoPago__* e RabbitMq__* saem
+  # daqui (não ficam em texto plano num ConfigMap versionado) — o CI/CD gera o Secret
+  # soat-billing-api-secret em tempo de deploy a partir do SSM Parameter Store. Ver
+  # README > "Deploy".
+
+  CORECLR_ENABLE_PROFILING: "1"
+  CORECLR_PROFILER: "{36032161-FFC0-4B61-B559-F6C5D41BAE5A}"
+  CORECLR_PROFILER_PATH: "/newrelic-instrumentation/libNewRelicProfiler.so"
+  CORECLR_NEWRELIC_HOME: "/newrelic-instrumentation"
+  NEW_RELIC_APP_NAME: "soat-billing-service"
