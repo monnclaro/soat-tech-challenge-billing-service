@@ -23,6 +23,8 @@ public class PagamentoConfiguration : IEntityTypeConfiguration<Pagamento>
         builder.Property(x => x.PreferenceId).HasColumnName("preference_id").HasMaxLength(100).IsRequired();
         builder.HasIndex(x => x.PreferenceId).IsUnique();
 
+        builder.Property(x => x.LinkPagamento).HasColumnName("link_pagamento").HasMaxLength(500).IsRequired();
+
         builder.Property(x => x.PaymentId).HasColumnName("payment_id").HasMaxLength(100);
 
         builder.Property(x => x.Status).HasColumnName("status").IsRequired();

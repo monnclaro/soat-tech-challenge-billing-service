@@ -19,7 +19,7 @@ public class BuscarPagamentoPorOrcamentoUseCaseTests
     {
         var idOrcamento = Guid.NewGuid();
         var pagamento = new Pagamento();
-        pagamento.Criar(idOrcamento, "preference-123", 100m);
+        pagamento.Criar(idOrcamento, "preference-123", "https://mercadopago.com/checkout/preference-123", 100m);
 
         _gateway.Setup(g => g.BuscarPorIdOrcamento(idOrcamento, It.IsAny<CancellationToken>()))
             .ReturnsAsync(pagamento);

@@ -26,7 +26,7 @@ public class PagamentoGatewayTests
     private static Pagamento CriarPagamento(string preferenceId = "preference-123")
     {
         var pagamento = new Pagamento();
-        pagamento.Criar(Guid.NewGuid(), preferenceId, 100m);
+        pagamento.Criar(Guid.NewGuid(), preferenceId, "https://mercadopago.com/checkout/" + preferenceId, 100m);
         return pagamento;
     }
 

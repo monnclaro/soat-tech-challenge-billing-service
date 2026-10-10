@@ -96,7 +96,7 @@ public class GerarOrcamentoUseCaseTests
         orcamentoExistente.Gerar(idOrdemServico, [new OrcamentoItem(Guid.NewGuid(), "Item", 200m, TipoItemOrcamento.Servico)]);
 
         var pagamentoExistente = new Pagamento();
-        pagamentoExistente.Criar(orcamentoExistente.Id, "preference-existente", 200m);
+        pagamentoExistente.Criar(orcamentoExistente.Id, "preference-existente", "https://mercadopago.com/checkout/preference-existente", 200m);
 
         _orcamentoGateway.Setup(g => g.BuscarPorIdOrdemServico(idOrdemServico, It.IsAny<CancellationToken>()))
             .ReturnsAsync(orcamentoExistente);

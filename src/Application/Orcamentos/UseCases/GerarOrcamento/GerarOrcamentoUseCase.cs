@@ -91,7 +91,7 @@ public class GerarOrcamentoUseCase : IUseCase
         }
 
         var pagamento = new Pagamento();
-        pagamento.Criar(orcamento.Id, preferencia.PreferenceId, orcamento.ValorTotal);
+        pagamento.Criar(orcamento.Id, preferencia.PreferenceId, preferencia.InitPoint, orcamento.ValorTotal);
 
         await _pagamentoGateway.Salvar(pagamento, ct);
 

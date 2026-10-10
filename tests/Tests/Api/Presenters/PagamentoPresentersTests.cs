@@ -21,7 +21,7 @@ public class BuscarPagamentoPresenterTests
     public void Ok_DeveRetornarOkComOOutput()
     {
         var presenter = new BuscarPagamentoPresenter();
-        var output = new PagamentoOutput(Guid.NewGuid(), Guid.NewGuid(), "pref", null, "Pendente", 100m, DateTime.UtcNow, null);
+        var output = new PagamentoOutput(Guid.NewGuid(), Guid.NewGuid(), "pref", "https://mercadopago.com/checkout/pref", null, "Pendente", 100m, DateTime.UtcNow, null);
 
         presenter.Ok(output);
 
@@ -46,7 +46,7 @@ public class BuscarPagamentoPorOrcamentoPresenterTests
     public void Ok_DeveRetornarOkComOOutput()
     {
         var presenter = new BuscarPagamentoPorOrcamentoPresenter();
-        var output = new PagamentoOutput(Guid.NewGuid(), Guid.NewGuid(), "pref", null, "Pendente", 100m, DateTime.UtcNow, null);
+        var output = new PagamentoOutput(Guid.NewGuid(), Guid.NewGuid(), "pref", "https://mercadopago.com/checkout/pref", null, "Pendente", 100m, DateTime.UtcNow, null);
 
         presenter.Ok(output);
 
