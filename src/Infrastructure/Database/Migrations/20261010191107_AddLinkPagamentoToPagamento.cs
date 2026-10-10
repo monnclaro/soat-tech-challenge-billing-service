@@ -1,10 +1,15 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using System.Diagnostics.CodeAnalysis;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
 namespace Infrastructure.Database.Migrations
 {
     /// <inheritdoc />
+    // Migration gerada pelo EF Core (dotnet ef migrations add) — schema puro, sem regra de
+    // negócio nem branching; testá-la significaria recriar o Postgres real via Testcontainers
+    // só para exercitar chamadas de CreateTable, sem nenhum ganho de cobertura de lógica.
+    [ExcludeFromCodeCoverage]
     public partial class AddLinkPagamentoToPagamento : Migration
     {
         /// <inheritdoc />
