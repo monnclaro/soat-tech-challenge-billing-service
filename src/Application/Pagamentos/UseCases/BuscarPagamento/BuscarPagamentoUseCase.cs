@@ -28,6 +28,7 @@ public class BuscarPagamentoUseCase : IUseCase
             pagamento.Id,
             pagamento.IdOrcamento,
             pagamento.PreferenceId,
+            pagamento.LinkPagamento,
             pagamento.PaymentId,
             pagamento.Status.ToString(),
             pagamento.Valor,

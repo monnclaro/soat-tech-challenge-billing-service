@@ -18,7 +18,7 @@ public class BuscarPagamentoUseCaseTests
     public async Task Execute_QuandoPagamentoExiste_DeveRetornarOk()
     {
         var pagamento = new Pagamento();
-        pagamento.Criar(Guid.NewGuid(), "preference-123", 100m);
+        pagamento.Criar(Guid.NewGuid(), "preference-123", "https://mercadopago.com/checkout/preference-123", 100m);
 
         _gateway.Setup(g => g.BuscarPorId(pagamento.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(pagamento);

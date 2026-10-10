@@ -14,17 +14,23 @@ public class Pagamento : Entity
     public Guid Id { get; private set; }
     public Guid IdOrcamento { get; private set; }
     public string PreferenceId { get; private set; } = null!;
+    public string LinkPagamento { get; private set; } = null!;
     public string? PaymentId { get; private set; }
     public StatusPagamento Status { get; private set; }
     public decimal Valor { get; private set; }
     public DateTime DataCriacao { get; private set; }
     public DateTime? DataAtualizacao { get; private set; }
 
-    public void Criar(Guid idOrcamento, string preferenceId, decimal valor)
+    public void Criar(Guid idOrcamento, string preferenceId, string linkPagamento, decimal valor)
     {
         if (string.IsNullOrWhiteSpace(preferenceId))
         {
             throw new DomainException("O identificador da preferência de pagamento é obrigatório.");
+        }
+
+        if (string.IsNullOrWhiteSpace(linkPagamento))
+        {
+            throw new DomainException("O link de pagamento é obrigatório.");
         }
 
         if (valor <= 0)
@@ -35,6 +41,7 @@ public class Pagamento : Entity
         Id = Guid.NewGuid();
         IdOrcamento = idOrcamento;
         PreferenceId = preferenceId;
+        LinkPagamento = linkPagamento;
         Status = StatusPagamento.Pendente;
         Valor = valor;
         DataCriacao = DateTime.UtcNow;

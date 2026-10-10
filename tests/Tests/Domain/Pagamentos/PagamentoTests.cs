@@ -13,11 +13,12 @@ public class PagamentoTests
         var idOrcamento = Guid.NewGuid();
         var pagamento = new Pagamento();
 
-        pagamento.Criar(idOrcamento, "preference-123", 200m);
+        pagamento.Criar(idOrcamento, "preference-123", "https://mercadopago.com/checkout/preference-123", 200m);
 
         pagamento.Id.Should().NotBeEmpty();
         pagamento.IdOrcamento.Should().Be(idOrcamento);
         pagamento.PreferenceId.Should().Be("preference-123");
+        pagamento.LinkPagamento.Should().Be("https://mercadopago.com/checkout/preference-123");
         pagamento.Status.Should().Be(StatusPagamento.Pendente);
         pagamento.Valor.Should().Be(200m);
         pagamento.PaymentId.Should().BeNull();
@@ -28,7 +29,7 @@ public class PagamentoTests
     {
         var pagamento = new Pagamento();
 
-        var acao = () => pagamento.Criar(Guid.NewGuid(), "preference-123", 0m);
+        var acao = () => pagamento.Criar(Guid.NewGuid(), "preference-123", "https://mercadopago.com/checkout/preference-123", 0m);
 
         acao.Should().Throw<DomainException>();
     }
@@ -38,7 +39,17 @@ public class PagamentoTests
     {
         var pagamento = new Pagamento();
 
-        var acao = () => pagamento.Criar(Guid.NewGuid(), "", 100m);
+        var acao = () => pagamento.Criar(Guid.NewGuid(), "", "https://mercadopago.com/checkout/preference-123", 100m);
+
+        acao.Should().Throw<DomainException>();
+    }
+
+    [Fact]
+    public void Criar_SemLinkPagamento_DeveLancarDomainException()
+    {
+        var pagamento = new Pagamento();
+
+        var acao = () => pagamento.Criar(Guid.NewGuid(), "preference-123", "", 100m);
 
         acao.Should().Throw<DomainException>();
     }
@@ -47,7 +58,7 @@ public class PagamentoTests
     public void Aprovar_QuandoPendente_DeveAlterarStatusEGuardarPaymentId()
     {
         var pagamento = new Pagamento();
-        pagamento.Criar(Guid.NewGuid(), "preference-123", 200m);
+        pagamento.Criar(Guid.NewGuid(), "preference-123", "https://mercadopago.com/checkout/preference-123", 200m);
 
         pagamento.Aprovar("payment-456");
 
@@ -61,7 +72,7 @@ public class PagamentoTests
     public void Recusar_QuandoPendente_DeveAlterarStatusEGuardarPaymentId()
     {
         var pagamento = new Pagamento();
-        pagamento.Criar(Guid.NewGuid(), "preference-123", 200m);
+        pagamento.Criar(Guid.NewGuid(), "preference-123", "https://mercadopago.com/checkout/preference-123", 200m);
 
         pagamento.Recusar("payment-456");
 
@@ -74,7 +85,7 @@ public class PagamentoTests
     public void Aprovar_QuandoJaAprovado_DeveLancarDomainException()
     {
         var pagamento = new Pagamento();
-        pagamento.Criar(Guid.NewGuid(), "preference-123", 200m);
+        pagamento.Criar(Guid.NewGuid(), "preference-123", "https://mercadopago.com/checkout/preference-123", 200m);
         pagamento.Aprovar("payment-456");
 
         var acao = () => pagamento.Aprovar("payment-789");
@@ -86,7 +97,7 @@ public class PagamentoTests
     public void Recusar_QuandoJaRecusado_DeveLancarDomainException()
     {
         var pagamento = new Pagamento();
-        pagamento.Criar(Guid.NewGuid(), "preference-123", 200m);
+        pagamento.Criar(Guid.NewGuid(), "preference-123", "https://mercadopago.com/checkout/preference-123", 200m);
         pagamento.Recusar("payment-456");
 
         var acao = () => pagamento.Recusar("payment-789");
@@ -98,7 +109,7 @@ public class PagamentoTests
     public void Aprovar_SemPaymentId_DeveLancarDomainException()
     {
         var pagamento = new Pagamento();
-        pagamento.Criar(Guid.NewGuid(), "preference-123", 200m);
+        pagamento.Criar(Guid.NewGuid(), "preference-123", "https://mercadopago.com/checkout/preference-123", 200m);
 
         var acao = () => pagamento.Aprovar("");
 

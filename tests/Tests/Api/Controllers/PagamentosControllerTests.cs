@@ -41,7 +41,7 @@ public class PagamentosControllerTests
     public async Task Buscar_QuandoPagamentoExiste_DeveRetornarOk()
     {
         var pagamento = new Pagamento();
-        pagamento.Criar(Guid.NewGuid(), "preference-123", 100m);
+        pagamento.Criar(Guid.NewGuid(), "preference-123", "https://mercadopago.com/checkout/preference-123", 100m);
 
         _pagamentoGateway.Setup(g => g.BuscarPorId(pagamento.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(pagamento);
@@ -67,7 +67,7 @@ public class PagamentosControllerTests
     {
         var idOrcamento = Guid.NewGuid();
         var pagamento = new Pagamento();
-        pagamento.Criar(idOrcamento, "preference-123", 100m);
+        pagamento.Criar(idOrcamento, "preference-123", "https://mercadopago.com/checkout/preference-123", 100m);
 
         _pagamentoGateway.Setup(g => g.BuscarPorIdOrcamento(idOrcamento, It.IsAny<CancellationToken>()))
             .ReturnsAsync(pagamento);

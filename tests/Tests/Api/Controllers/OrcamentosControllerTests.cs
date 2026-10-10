@@ -31,7 +31,7 @@ public class OrcamentosControllerTests
     {
         var gerarUseCase = new GerarOrcamentoUseCase(
             _orcamentoGateway.Object, _pagamentoGateway.Object, _mercadoPagoGateway.Object, _sagaEventPublisher.Object, _gerarPresenter);
-        var buscarUseCase = new BuscarOrcamentoUseCase(_orcamentoGateway.Object, _buscarPresenter);
+        var buscarUseCase = new BuscarOrcamentoUseCase(_orcamentoGateway.Object, _pagamentoGateway.Object, _buscarPresenter);
         var orcamentoController = new OrcamentoController(gerarUseCase, buscarUseCase);
 
         return new OrcamentosController(orcamentoController, _gerarPresenter, _buscarPresenter);

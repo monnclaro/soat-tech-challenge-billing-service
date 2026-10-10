@@ -41,7 +41,7 @@ public class RegistrarWebhookPagamentoUseCaseTests
         orcamento.Gerar(idOrdemServico, [new OrcamentoItem(Guid.NewGuid(), "Item", 200m, TipoItemOrcamento.Servico)]);
 
         var pagamento = new Pagamento();
-        pagamento.Criar(orcamento.Id, "preference-123", 200m);
+        pagamento.Criar(orcamento.Id, "preference-123", "https://mercadopago.com/checkout/preference-123", 200m);
 
         return (orcamento, pagamento);
     }
