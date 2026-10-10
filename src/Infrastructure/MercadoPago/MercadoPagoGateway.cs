@@ -18,11 +18,15 @@ namespace Infrastructure.MercadoPago;
 [ExcludeFromCodeCoverage]
 public class MercadoPagoGateway : IMercadoPagoGateway
 {
+    private readonly MercadoPagoSettings _settings;
+
     public MercadoPagoGateway(IOptions<MercadoPagoSettings> settings)
     {
+        _settings = settings.Value;
+
         // MercadoPagoConfig.AccessToken é estático (design do próprio SDK oficial) — seguro
         // aqui porque este processo só atende a uma conta/credencial do Mercado Pago.
-        MercadoPagoConfig.AccessToken = settings.Value.AccessToken;
+        MercadoPagoConfig.AccessToken = _settings.AccessToken;
     }
 
     public async Task<PreferenciaCriadaOutput> CriarPreferencia(CriarPreferenciaInput input, CancellationToken ct = default)
@@ -39,7 +43,11 @@ public class MercadoPagoGateway : IMercadoPagoGateway
                     UnitPrice = i.Valor
                 })
                 .ToList(),
-            NotificationUrl = input.NotificationUrl
+            // Quem chama (GerarOrcamentoUseCase) nunca informa um NotificationUrl próprio —
+            // esse é um dado de ambiente (URL pública do Billing Service), não de negócio, por
+            // isso o gateway cai pro valor configurado (MercadoPago:NotificationUrl) quando o
+            // input não traz um.
+            NotificationUrl = input.NotificationUrl ?? _settings.NotificationUrl
         };
 
         var client = new PreferenceClient();
