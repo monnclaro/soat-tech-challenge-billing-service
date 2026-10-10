@@ -76,8 +76,12 @@ public static class DependencyInjection
                     h.Password(rabbitMq.Password);
                 });
 
-                cfg.UseDelayedRedelivery(r => r.Intervals(
-                    TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(15)));
+                // Sem UseDelayedRedelivery: exige o plugin "rabbitmq_delayed_message_exchange"
+                // no broker, que não está provisionado nem localmente nem no infra-k8s — usar
+                // esse middleware quebra a topologia de todos os consumers (erro
+                // "unknown exchange type 'x-delayed-message'"). UseMessageRetry (retentativa
+                // imediata, sem devolver a mensagem à fila) já cobre o caso comum de falha
+                // transitória sem depender de nenhum plugin do broker.
                 cfg.UseMessageRetry(r => r.Interval(3, TimeSpan.FromSeconds(5)));
 
                 cfg.ConfigureEndpoints(context);
