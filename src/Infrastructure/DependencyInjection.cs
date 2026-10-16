@@ -67,6 +67,7 @@ public static class DependencyInjection
         services.AddMassTransit(x =>
         {
             x.AddConsumer<GerarOrcamentoConsumer>();
+            x.AddConsumer<GerarOrcamentoFaultConsumer>();
 
             x.UsingRabbitMq((context, cfg) =>
             {
@@ -81,7 +82,10 @@ public static class DependencyInjection
                 // esse middleware quebra a topologia de todos os consumers (erro
                 // "unknown exchange type 'x-delayed-message'"). UseMessageRetry (retentativa
                 // imediata, sem devolver a mensagem à fila) já cobre o caso comum de falha
-                // transitória sem depender de nenhum plugin do broker.
+                // transitória sem depender de nenhum plugin do broker — nem toda falha exige
+                // compensar a saga de cara: GerarOrcamentoConsumer relança em vez de compensar
+                // na primeira falha do Mercado Pago, e só depois que estas 3 tentativas se
+                // esgotarem é que GerarOrcamentoFaultConsumer (reage a Fault<T>) avisa a saga.
                 cfg.UseMessageRetry(r => r.Interval(3, TimeSpan.FromSeconds(5)));
 
                 cfg.ConfigureEndpoints(context);

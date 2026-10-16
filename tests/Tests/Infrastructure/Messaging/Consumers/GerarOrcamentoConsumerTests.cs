@@ -122,11 +122,12 @@ public class GerarOrcamentoConsumerTests
     }
 
     [Fact]
-    public async Task Consume_QuandoMercadoPagoFalha_NaoDeveLancarExcecaoEDevePublicarOrcamentoFalhou()
+    public async Task Consume_QuandoMercadoPagoFalha_DeveRelancarParaOMassTransitRetentarSemCompensarDeCara()
     {
-        // A falha já é tratada dentro do use case (publica OrcamentoFalhou e compensa a
-        // saga) — o consumer não deve relançar, senão o MassTransit trataria como falha de
-        // entrega/retry por cima de uma falha que já foi comunicada à saga.
+        // Nem toda falha exige compensação: o consumer relança de propósito, deixando o
+        // MassTransit retentar a entrega (UseMessageRetry, 3x/5s) antes de qualquer
+        // compensação — só GerarOrcamentoFaultConsumer (reage a Fault<T>, depois que as
+        // tentativas se esgotarem) publica OrcamentoFalhou.
         var idOrdemServico = Guid.NewGuid();
         var mensagem = new GerarOrcamento(
             idOrdemServico,
@@ -143,7 +144,7 @@ public class GerarOrcamentoConsumerTests
 
         var acao = async () => await CriarConsumer().Consume(contexto.Object);
 
-        await acao.Should().NotThrowAsync();
-        _sagaEventPublisher.Verify(p => p.PublicarOrcamentoFalhou(idOrdemServico, It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+        await acao.Should().ThrowAsync<InvalidOperationException>();
+        _sagaEventPublisher.Verify(p => p.PublicarOrcamentoFalhou(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 }
