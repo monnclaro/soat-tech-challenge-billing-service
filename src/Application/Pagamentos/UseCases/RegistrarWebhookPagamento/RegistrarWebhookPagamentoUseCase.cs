@@ -3,6 +3,7 @@ using Application.Orcamentos.Gateways;
 using Application.Pagamentos.UseCases.Interfaces;
 using Domain.Orcamentos.Gateways;
 using Domain.Pagamentos.Gateways;
+using Microsoft.Extensions.Logging;
 
 namespace Application.Pagamentos.UseCases.RegistrarWebhookPagamento;
 
@@ -17,19 +18,22 @@ public class RegistrarWebhookPagamentoUseCase : IUseCase
     private readonly IOrcamentoGateway _orcamentoGateway;
     private readonly IPagamentoGateway _pagamentoGateway;
     private readonly IRegistrarWebhookPagamentoOutputPort _outputPort;
+    private readonly ILogger<RegistrarWebhookPagamentoUseCase> _logger;
 
     public RegistrarWebhookPagamentoUseCase(
         IWebhookSignatureValidator signatureValidator,
         IMercadoPagoGateway mercadoPagoGateway,
         IOrcamentoGateway orcamentoGateway,
         IPagamentoGateway pagamentoGateway,
-        IRegistrarWebhookPagamentoOutputPort outputPort)
+        IRegistrarWebhookPagamentoOutputPort outputPort,
+        ILogger<RegistrarWebhookPagamentoUseCase> logger)
     {
         _signatureValidator = signatureValidator;
         _mercadoPagoGateway = mercadoPagoGateway;
         _orcamentoGateway = orcamentoGateway;
         _pagamentoGateway = pagamentoGateway;
         _outputPort = outputPort;
+        _logger = logger;
     }
 
     public async Task Execute(RegistrarWebhookPagamentoInput input, CancellationToken ct = default)
@@ -59,6 +63,16 @@ public class RegistrarWebhookPagamentoUseCase : IUseCase
         }
 
         var pagamentoConsultado = await _mercadoPagoGateway.BuscarPagamentoPorId(input.DataId, ct);
+
+        // TODO(diagnostico-temporario): remover junto com o log do WebhooksController depois
+        // de confirmar o comportamento em produção — "NaoEncontrado" e "status não-final"
+        // devolvem o mesmo 200 pro Mercado Pago, então de fora não dá pra distinguir "pagamento
+        // não bateu com nenhum Orçamento nosso" de "ainda está pending, vai vir outro webhook".
+        _logger.LogInformation(
+            "Webhook Mercado Pago consultado: dataId={DataId} encontradoNoMercadoPago={Encontrado} " +
+            "statusMercadoPago={StatusMp} idOrdemServico={IdOrdemServico}",
+            input.DataId, pagamentoConsultado is not null, pagamentoConsultado?.Status, pagamentoConsultado?.IdOrdemServico);
+
         if (pagamentoConsultado is null)
         {
             _outputPort.NaoEncontrado();
@@ -68,6 +82,7 @@ public class RegistrarWebhookPagamentoUseCase : IUseCase
         var orcamento = await _orcamentoGateway.BuscarPorIdOrdemServico(pagamentoConsultado.IdOrdemServico, ct);
         if (orcamento is null)
         {
+            _logger.LogInformation("Webhook Mercado Pago: nenhum Orcamento encontrado para idOrdemServico={IdOrdemServico}", pagamentoConsultado.IdOrdemServico);
             _outputPort.NaoEncontrado();
             return;
         }
@@ -75,9 +90,14 @@ public class RegistrarWebhookPagamentoUseCase : IUseCase
         var pagamento = await _pagamentoGateway.BuscarPorIdOrcamento(orcamento.Id, ct);
         if (pagamento is null)
         {
+            _logger.LogInformation("Webhook Mercado Pago: nenhum Pagamento encontrado para idOrcamento={IdOrcamento}", orcamento.Id);
             _outputPort.NaoEncontrado();
             return;
         }
+
+        _logger.LogInformation(
+            "Webhook Mercado Pago: pagamento encontrado idPagamento={IdPagamento} statusAtualNoBanco={StatusAtual} statusMercadoPago={StatusMp}",
+            pagamento.Id, pagamento.Status, pagamentoConsultado.Status);
 
         switch (pagamentoConsultado.Status)
         {

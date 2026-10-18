@@ -30,7 +30,8 @@ public class WebhooksControllerTests
         var buscarUseCase = new BuscarPagamentoUseCase(_pagamentoGateway.Object, new BuscarPagamentoPresenter());
         var buscarPorOrcamentoUseCase = new BuscarPagamentoPorOrcamentoUseCase(_pagamentoGateway.Object, new BuscarPagamentoPorOrcamentoPresenter());
         var registrarWebhookUseCase = new RegistrarWebhookPagamentoUseCase(
-            _signatureValidator.Object, _mercadoPagoGateway.Object, _orcamentoGateway.Object, _pagamentoGateway.Object, _webhookPresenter);
+            _signatureValidator.Object, _mercadoPagoGateway.Object, _orcamentoGateway.Object, _pagamentoGateway.Object, _webhookPresenter,
+            NullLogger<RegistrarWebhookPagamentoUseCase>.Instance);
 
         var pagamentoController = new PagamentoController(buscarUseCase, buscarPorOrcamentoUseCase, registrarWebhookUseCase);
 
