@@ -79,13 +79,14 @@ public class GerarOrcamentoUseCase : IUseCase
         }
         catch (Exception ex)
         {
-            // Fronteira com o Mercado Pago (rede, API fora do ar, credenciais inválidas) —
-            // nunca deixa a mensagem morrer silenciosamente sem sinalizar a saga: publica a
-            // falha para o OS Service cancelar a OS (compensação), em vez de deixar a
-            // mensagem cair na fila de erro do RabbitMQ sem nenhuma reação. O Orcamento já
-            // persistido continua ali, sem Pagamento — se o problema for corrigido, reprocessar
-            // manualmente a mesma mensagem retoma daqui (ver o branch de retomada acima).
-            await _sagaEventPublisher.PublicarOrcamentoFalhou(input.IdOrdemServico, ex.Message, ct);
+            // Fronteira com o Mercado Pago (rede, API fora do ar, credenciais inválidas) — não
+            // compensa (OrcamentoFalhou) já na primeira falha, nem toda falha exige desfazer a
+            // saga: sinaliza Falha pro consumer decidir re-lançar, deixando o MassTransit
+            // retentar a entrega (UseMessageRetry, 3x/5s). Cada retentativa chama este mesmo
+            // use case de novo — como o Orcamento já está persistido sem Pagamento, cai no
+            // branch de retomada acima em vez de duplicar nada, só repetindo a chamada ao
+            // Mercado Pago. Só depois que as 3 tentativas se esgotarem é que a saga é avisada
+            // (GerarOrcamentoFaultConsumer, reagindo a Fault<GerarOrcamento>) e a OS é cancelada.
             _outputPort.Falha($"Falha ao gerar a preferência de pagamento no Mercado Pago: {ex.Message}");
             return;
         }

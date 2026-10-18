@@ -46,23 +46,29 @@ public class GerarOrcamentoConsumer : IConsumer<GerarOrcamento>
         await useCase.Execute(new GerarOrcamentoInput(msg.IdOrdemServico, itens, msg.ValorTotal), context.CancellationToken);
 
         // OrcamentoJaExiste é idempotente por natureza (reentrega da mensagem) — não é falha.
-        if (outputPort.ValorDivergenteMensagem is { } mensagem)
+        if (outputPort.ValorDivergenteMensagem is { } mensagemDivergente)
         {
-            throw new InvalidOperationException(mensagem);
+            throw new InvalidOperationException(mensagemDivergente);
+        }
+
+        // Falha ao chamar o Mercado Pago (rede, API fora do ar) é relançada de propósito:
+        // deixa o MassTransit retentar a entrega (UseMessageRetry, 3x/5s) chamando este
+        // consumer de novo, em vez de compensar (OrcamentoFalhou) já na primeira falha. Só
+        // depois que as tentativas se esgotarem é que GerarOrcamentoFaultConsumer (reage a
+        // Fault<GerarOrcamento>) avisa a saga pra cancelar a OS.
+        if (outputPort.FalhaMensagem is { } mensagemFalha)
+        {
+            throw new InvalidOperationException(mensagemFalha);
         }
     }
 
     private sealed class CapturingOutputPort : IGerarOrcamentoOutputPort
     {
         public string? ValorDivergenteMensagem { get; private set; }
+        public string? FalhaMensagem { get; private set; }
         public void ValorDivergente(string mensagem) => ValorDivergenteMensagem = mensagem;
         public void OrcamentoJaExiste(string mensagem) { }
-
-        // Falha ao chamar o Mercado Pago já foi tratada dentro do use case (publica
-        // OrcamentoFalhou e compensa a saga) — não é um erro de mensageria, a mensagem
-        // deve ser considerada processada com sucesso, sem retry/fila de erro.
-        public void Falha(string mensagem) { }
-
+        public void Falha(string mensagem) => FalhaMensagem = mensagem;
         public void Ok(OrcamentoOutput output) { }
     }
 }

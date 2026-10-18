@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using Application.Common.Interfaces;
+using Application.Orcamentos.Gateways;
 using Application.Pagamentos.UseCases.Interfaces;
 using Infrastructure.Database;
 using Infrastructure.DomainEvents;
@@ -43,6 +44,17 @@ public static class DependencyInjection
             .AsImplementedInterfaces()
             .WithScopedLifetime());
 
+        // Sobrescreve o MercadoPagoGateway real registrado pelo scan acima quando
+        // MercadoPago:UseFake=true — só o teste de integração do OS Service liga essa
+        // flag (ver comentário em MercadoPagoSettings.UseFake). A última registração de
+        // um serviço "ganha" na resolução via DI do ASP.NET Core, por isso isso precisa
+        // vir depois do scan, não antes.
+        var mercadoPagoSettings = configuration.GetSection("MercadoPago").Get<MercadoPagoSettings>() ?? new MercadoPagoSettings();
+        if (mercadoPagoSettings.UseFake)
+        {
+            services.AddScoped<IMercadoPagoGateway, MercadoPagoGatewayFake>();
+        }
+
         return services;
     }
 
@@ -67,6 +79,7 @@ public static class DependencyInjection
         services.AddMassTransit(x =>
         {
             x.AddConsumer<GerarOrcamentoConsumer>();
+            x.AddConsumer<GerarOrcamentoFaultConsumer>();
 
             x.UsingRabbitMq((context, cfg) =>
             {
@@ -81,7 +94,10 @@ public static class DependencyInjection
                 // esse middleware quebra a topologia de todos os consumers (erro
                 // "unknown exchange type 'x-delayed-message'"). UseMessageRetry (retentativa
                 // imediata, sem devolver a mensagem à fila) já cobre o caso comum de falha
-                // transitória sem depender de nenhum plugin do broker.
+                // transitória sem depender de nenhum plugin do broker — nem toda falha exige
+                // compensar a saga de cara: GerarOrcamentoConsumer relança em vez de compensar
+                // na primeira falha do Mercado Pago, e só depois que estas 3 tentativas se
+                // esgotarem é que GerarOrcamentoFaultConsumer (reage a Fault<T>) avisa a saga.
                 cfg.UseMessageRetry(r => r.Interval(3, TimeSpan.FromSeconds(5)));
 
                 cfg.ConfigureEndpoints(context);

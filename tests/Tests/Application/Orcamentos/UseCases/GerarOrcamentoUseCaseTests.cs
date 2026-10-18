@@ -158,11 +158,12 @@ public class GerarOrcamentoUseCaseTests
     }
 
     [Fact]
-    public async Task Execute_QuandoMercadoPagoFalha_DevePublicarOrcamentoFalhouENaoSalvarPagamento()
+    public async Task Execute_QuandoMercadoPagoFalha_NaoCompensaDeCara_SoSinalizaFalhaParaOConsumerRetentar()
     {
-        // Caminho de compensação: se a chamada ao Mercado Pago falhar (rede, API fora do
-        // ar), a saga precisa ser avisada (OrcamentoFalhou) para o OS Service cancelar a OS
-        // — em vez de deixar a mensagem cair silenciosamente na fila de erro do RabbitMQ.
+        // Nem toda falha exige compensação: na primeira falha do Mercado Pago (rede, API
+        // fora do ar), o use case NÃO publica OrcamentoFalhou — só sinaliza Falha pro
+        // consumer decidir relançar, deixando o MassTransit retentar a entrega antes de
+        // compensar a saga (ver GerarOrcamentoConsumer/GerarOrcamentoFaultConsumer).
         var idOrdemServico = Guid.NewGuid();
         var input = new GerarOrcamentoInput(idOrdemServico, ItensValidos(), 200m);
 
@@ -174,11 +175,12 @@ public class GerarOrcamentoUseCaseTests
 
         await CriarUseCase().Execute(input);
 
-        _sagaEventPublisher.Verify(p => p.PublicarOrcamentoFalhou(idOrdemServico, It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+        _sagaEventPublisher.Verify(p => p.PublicarOrcamentoFalhou(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
         _outputPort.Verify(o => o.Falha(It.IsAny<string>()), Times.Once);
         _outputPort.Verify(o => o.Ok(It.IsAny<OrcamentoOutput>()), Times.Never);
 
-        // O Orcamento já persistido não é desfeito — fica disponível para retomada manual.
+        // O Orcamento já persistido não é desfeito — fica disponível pra retomada (manual
+        // ou via retentativa automática do MassTransit).
         _pagamentoGateway.Verify(g => g.Salvar(It.IsAny<Pagamento>(), It.IsAny<CancellationToken>()), Times.Never);
         _sagaEventPublisher.Verify(p => p.PublicarOrcamentoGerado(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }

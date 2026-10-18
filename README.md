@@ -87,7 +87,7 @@ os dois eventos de volta — não conhece os outros passos da saga (diagnóstico
 |---|---|---|
 | OS Service → Billing (comando) | `GerarOrcamento` | Gera o orçamento + cria a preferência de pagamento no Mercado Pago |
 | Billing → OS Service (evento) | `OrcamentoGerado` | Publicado ao concluir a geração do orçamento |
-| Billing → OS Service (evento) | `OrcamentoFalhou` | **Compensação**: publicado se a chamada ao Mercado Pago falhar (rede, API fora do ar) — o OS Service cancela a OS em vez de ficar esperando um orçamento que nunca chega |
+| Billing → OS Service (evento) | `OrcamentoFalhou` | **Compensação**: publicado só depois de 3 tentativas falhas de chamar o Mercado Pago (retry automático do MassTransit, 5s de intervalo) — nem toda falha exige compensação de cara; se for transitória (rede, API fora do ar momentaneamente), uma retentativa resolve sozinha antes de cancelar a OS |
 | Billing → OS Service (evento) | `PagamentoAprovado` / `PagamentoRecusado` | Publicado a partir do webhook do Mercado Pago — `PagamentoRecusado` é o caminho de compensação da saga (cancela a OS) |
 
 Justificativa completa do desenho da saga (por que a orquestração vive no OS Service, sem um saga state machine separado): [ADR 0001 no repositório do OS Service](https://github.com/monnclaro/soat-tech-challenge-os-service/blob/main/docs/adr/0001-saga-orquestrada-sem-state-machine-separado.md).
@@ -98,7 +98,11 @@ Um consumer MassTransit (`GerarOrcamentoConsumer`) reage ao comando `GerarOrcame
 publicado pelo OS Service, reaproveitando o `GerarOrcamentoUseCase` já existente (mesma regra
 de negócio do endpoint REST interno — nenhuma lógica duplicada entre a via HTTP e a via
 mensageria). Ao concluir, publica `OrcamentoGerado`; se a chamada ao Mercado Pago lançar
-exceção, publica `OrcamentoFalhou` em vez de deixar a mensagem cair na fila de erro do
+exceção, o consumer relança de propósito em vez de compensar na hora — isso aciona o retry
+automático do MassTransit (3x/5s), que chama o use case de novo (retomando do `Orcamento` já
+persistido, sem duplicar nada). Só depois que as 3 tentativas se esgotam é que
+`GerarOrcamentoFaultConsumer` (reage ao `Fault<GerarOrcamento>` publicado pelo MassTransit)
+publica `OrcamentoFalhou` de verdade, em vez de deixar a mensagem cair na fila de erro do
 RabbitMQ sem nenhuma reação (compensação — ver "Papel na saga" acima); ao aprovar ou recusar
 um pagamento (webhook do Mercado Pago), publica `PagamentoAprovado`/`PagamentoRecusado` —
 todos consumidos pelo OS Service para avançar/compensar a saga. Contratos em `Soat.Contracts.Saga`
@@ -155,7 +159,8 @@ dotnet test
 Cobre: regras de arquitetura (NetArchTest, `tests/Tests/Camadas`), transições de estado das
 entidades `Orcamento`/`Pagamento` (xUnit + FluentAssertions), e os use cases/consumers/presenters
 da Application/Infrastructure/Api (Moq) — incluindo os 3 ramos de idempotência de
-`GerarOrcamentoUseCase` e o caminho de compensação `OrcamentoFalhou`.
+`GerarOrcamentoUseCase`, o retry antes de compensar (`GerarOrcamentoConsumer` relançando) e o
+caminho de compensação em si (`GerarOrcamentoFaultConsumer` publicando `OrcamentoFalhou`).
 
 ### Evidência de cobertura
 
