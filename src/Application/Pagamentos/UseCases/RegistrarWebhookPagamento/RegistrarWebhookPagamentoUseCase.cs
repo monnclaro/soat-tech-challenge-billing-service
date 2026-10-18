@@ -35,12 +35,17 @@ public class RegistrarWebhookPagamentoUseCase : IUseCase
     public async Task Execute(RegistrarWebhookPagamentoInput input, CancellationToken ct = default)
     {
         // Mercado Pago envia outros tópicos (ex.: "merchant_order") no mesmo endpoint de
-        // webhook — só nos interessa "payment". Payload mínimo obrigatório: type + data.id.
-        if (string.IsNullOrWhiteSpace(input.DataId) ||
-            string.IsNullOrWhiteSpace(input.Tipo) ||
-            !input.Tipo.Equals("payment", StringComparison.OrdinalIgnoreCase))
+        // webhook — só nos interessa pagamento. Payload mínimo obrigatório: tipo + data.id.
+        // "tipo" vem de "type" (tipo de recurso, ex. "payment") OU de "action" (evento do
+        // ciclo de vida, ex. "payment.created"/"payment.updated") quando "type" não vem no
+        // corpo — por isso aceita tanto o valor exato "payment" quanto qualquer "payment.*".
+        var ehNotificacaoDePagamento = input.Tipo is not null &&
+            (input.Tipo.Equals("payment", StringComparison.OrdinalIgnoreCase) ||
+             input.Tipo.StartsWith("payment.", StringComparison.OrdinalIgnoreCase));
+
+        if (string.IsNullOrWhiteSpace(input.DataId) || !ehNotificacaoDePagamento)
         {
-            _outputPort.PayloadInvalido("Notificação inválida: campos 'type' (=\"payment\") e 'data.id' são obrigatórios.");
+            _outputPort.PayloadInvalido("Notificação inválida: campos 'type'/'action' relacionados a pagamento e 'data.id' são obrigatórios.");
             return;
         }
 

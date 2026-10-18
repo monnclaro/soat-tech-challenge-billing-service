@@ -60,6 +60,23 @@ public class RegistrarWebhookPagamentoUseCaseTests
         _mercadoPagoGateway.Verify(g => g.BuscarPagamentoPorId(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
+    [Theory]
+    [InlineData("payment.created")]
+    [InlineData("payment.updated")]
+    [InlineData("PAYMENT.CREATED")]
+    public async Task Execute_ComTipoNoFormatoDeAction_DeveTratarComoNotificacaoDePagamento(string tipo)
+    {
+        // "type" nem sempre vem no corpo — o controller cai pro "action" (ex.:
+        // "payment.created"), que também deve ser aceito como notificação de pagamento.
+        _mercadoPagoGateway.Setup(g => g.BuscarPagamentoPorId("data-id", It.IsAny<CancellationToken>()))
+            .ReturnsAsync((PagamentoConsultadoOutput?)null);
+
+        await CriarUseCase().Execute(new RegistrarWebhookPagamentoInput(tipo, "data-id", "x", "y"));
+
+        _outputPort.Verify(o => o.PayloadInvalido(It.IsAny<string>()), Times.Never);
+        _mercadoPagoGateway.Verify(g => g.BuscarPagamentoPorId("data-id", It.IsAny<CancellationToken>()), Times.Once);
+    }
+
     [Fact]
     public async Task Execute_ComAssinaturaInvalida_DeveRetornarAssinaturaInvalidaENaoConsultarMercadoPago()
     {
