@@ -41,7 +41,12 @@ public class WebhooksController : ControllerBase
         CancellationToken ct)
     {
         var tipo = body?.Type ?? body?.Action ?? type;
-        var dataId = body?.Data?.Id ?? dataIdQuery;
+        // Prioriza a query string, não o corpo: os SDKs oficiais do Mercado Pago montam o
+        // manifesto da assinatura (ver WebhookSignatureValidator) a partir do "data.id" da
+        // query string (ex.: PHP lê "$_GET['data_id']"), não do corpo JSON — mesmo quando o
+        // corpo também traz esse campo. Usar o valor errado aqui faz a assinatura calculada
+        // nunca bater, mesmo com o secret certo.
+        var dataId = dataIdQuery ?? body?.Data?.Id;
 
         // TODO(diagnostico-temporario): remover depois de confirmar a causa do 400 em
         // produção — sem isso não há visibilidade do que o Mercado Pago realmente envia
