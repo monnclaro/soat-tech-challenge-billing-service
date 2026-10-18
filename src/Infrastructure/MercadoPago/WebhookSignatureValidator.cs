@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using Application.Pagamentos.UseCases.Interfaces;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Infrastructure.MercadoPago;
@@ -16,10 +17,12 @@ namespace Infrastructure.MercadoPago;
 public class WebhookSignatureValidator : IWebhookSignatureValidator
 {
     private readonly MercadoPagoSettings _settings;
+    private readonly ILogger<WebhookSignatureValidator> _logger;
 
-    public WebhookSignatureValidator(IOptions<MercadoPagoSettings> settings)
+    public WebhookSignatureValidator(IOptions<MercadoPagoSettings> settings, ILogger<WebhookSignatureValidator> logger)
     {
         _settings = settings.Value;
+        _logger = logger;
     }
 
     public bool EhValida(WebhookSignatureContext context)
@@ -36,6 +39,8 @@ public class WebhookSignatureValidator : IWebhookSignatureValidator
 
         if (string.IsNullOrWhiteSpace(context.XSignature) || string.IsNullOrWhiteSpace(context.XRequestId))
         {
+            _logger.LogInformation("Assinatura invalida: x-signature ou x-request-id ausente (xSignatureNula={XSignatureNula} xRequestIdNulo={XRequestIdNulo})",
+                string.IsNullOrWhiteSpace(context.XSignature), string.IsNullOrWhiteSpace(context.XRequestId));
             return false;
         }
 
@@ -47,6 +52,7 @@ public class WebhookSignatureValidator : IWebhookSignatureValidator
 
         if (!partes.TryGetValue("ts", out var ts) || !partes.TryGetValue("v1", out var assinaturaRecebida))
         {
+            _logger.LogInformation("Assinatura invalida: x-signature sem 'ts' ou 'v1' no formato esperado. xSignature={XSignature}", context.XSignature);
             return false;
         }
 
@@ -55,9 +61,23 @@ public class WebhookSignatureValidator : IWebhookSignatureValidator
         using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(_settings.WebhookSecret));
         var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(manifesto));
         var assinaturaCalculada = Convert.ToHexString(hash).ToLowerInvariant();
+        // Não força case na recebida antes de comparar: HMAC hex pode, em tese, vir em
+        // qualquer combinação de maiúsculas/minúsculas, e FixedTimeEquals compara byte a
+        // byte — sem isso, uma assinatura correta mas com case diferente seria rejeitada.
+        var assinaturaRecebidaNormalizada = assinaturaRecebida.ToLowerInvariant();
 
-        return CryptographicOperations.FixedTimeEquals(
+        var bateu = CryptographicOperations.FixedTimeEquals(
             Encoding.UTF8.GetBytes(assinaturaCalculada),
-            Encoding.UTF8.GetBytes(assinaturaRecebida));
+            Encoding.UTF8.GetBytes(assinaturaRecebidaNormalizada));
+
+        // TODO(diagnostico-temporario): remover junto com os outros logs de diagnostico do
+        // webhook depois de confirmar a causa do 401 em producao — nunca loga o secret nem o
+        // manifesto completo (teria o mesmo efeito de logar o segredo em texto claro).
+        _logger.LogInformation(
+            "Validacao de assinatura Mercado Pago: dataId={DataId} ts={Ts} assinaturaRecebida={AssinaturaRecebida} " +
+            "assinaturaCalculada={AssinaturaCalculada} bateu={Bateu} secretConfiguradoTamanho={SecretTamanho}",
+            context.DataId, ts, assinaturaRecebidaNormalizada, assinaturaCalculada, bateu, _settings.WebhookSecret.Length);
+
+        return bateu;
     }
 }
