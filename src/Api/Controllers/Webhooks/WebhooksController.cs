@@ -45,8 +45,9 @@ public class WebhooksController : ControllerBase
         // manifesto da assinatura (ver WebhookSignatureValidator) a partir do "data.id" da
         // query string (ex.: PHP lê "$_GET['data_id']"), não do corpo JSON — mesmo quando o
         // corpo também traz esse campo. Usar o valor errado aqui faz a assinatura calculada
-        // nunca bater, mesmo com o secret certo.
-        var dataId = dataIdQuery ?? body?.Data?.Id;
+        // nunca bater, mesmo com o secret certo. "??" não bastava: só cai pro corpo quando a
+        // query vem null, não quando vem vazia ("data.id=" sem valor).
+        var dataId = !string.IsNullOrWhiteSpace(dataIdQuery) ? dataIdQuery : body?.Data?.Id;
 
         // TODO(diagnostico-temporario): remover depois de confirmar a causa do 400 em
         // produção — sem isso não há visibilidade do que o Mercado Pago realmente envia
