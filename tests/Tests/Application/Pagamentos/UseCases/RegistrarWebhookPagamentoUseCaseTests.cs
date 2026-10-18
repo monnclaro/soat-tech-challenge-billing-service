@@ -9,6 +9,7 @@ using Domain.Pagamentos;
 using Domain.Pagamentos.Enums;
 using Domain.Pagamentos.Gateways;
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
 namespace Tests.Application.Pagamentos.UseCases;
@@ -33,7 +34,8 @@ public class RegistrarWebhookPagamentoUseCaseTests
         _mercadoPagoGateway.Object,
         _orcamentoGateway.Object,
         _pagamentoGateway.Object,
-        _outputPort.Object);
+        _outputPort.Object,
+        NullLogger<RegistrarWebhookPagamentoUseCase>.Instance);
 
     private static (Orcamento orcamento, Pagamento pagamento) CriarOrcamentoComPagamentoPendente(Guid idOrdemServico)
     {

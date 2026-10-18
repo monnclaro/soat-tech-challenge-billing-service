@@ -11,6 +11,7 @@ using Domain.Pagamentos;
 using Domain.Pagamentos.Gateways;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
 namespace Tests.Api.Controllers;
@@ -30,7 +31,8 @@ public class PagamentosControllerTests
         var buscarUseCase = new BuscarPagamentoUseCase(_pagamentoGateway.Object, _buscarPresenter);
         var buscarPorOrcamentoUseCase = new BuscarPagamentoPorOrcamentoUseCase(_pagamentoGateway.Object, _buscarPorOrcamentoPresenter);
         var registrarWebhookUseCase = new RegistrarWebhookPagamentoUseCase(
-            _signatureValidator.Object, _mercadoPagoGateway.Object, _orcamentoGateway.Object, _pagamentoGateway.Object, _webhookPresenter);
+            _signatureValidator.Object, _mercadoPagoGateway.Object, _orcamentoGateway.Object, _pagamentoGateway.Object, _webhookPresenter,
+            NullLogger<RegistrarWebhookPagamentoUseCase>.Instance);
 
         var pagamentoController = new PagamentoController(buscarUseCase, buscarPorOrcamentoUseCase, registrarWebhookUseCase);
 
