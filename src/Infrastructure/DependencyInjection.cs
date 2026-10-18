@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using Application.Common.Interfaces;
+using Application.Orcamentos.Gateways;
 using Application.Pagamentos.UseCases.Interfaces;
 using Infrastructure.Database;
 using Infrastructure.DomainEvents;
@@ -42,6 +43,17 @@ public static class DependencyInjection
             .AddClasses(c => c.Where(t => t.Name.EndsWith("Gateway")))
             .AsImplementedInterfaces()
             .WithScopedLifetime());
+
+        // Sobrescreve o MercadoPagoGateway real registrado pelo scan acima quando
+        // MercadoPago:UseFake=true — só o teste de integração do OS Service liga essa
+        // flag (ver comentário em MercadoPagoSettings.UseFake). A última registração de
+        // um serviço "ganha" na resolução via DI do ASP.NET Core, por isso isso precisa
+        // vir depois do scan, não antes.
+        var mercadoPagoSettings = configuration.GetSection("MercadoPago").Get<MercadoPagoSettings>() ?? new MercadoPagoSettings();
+        if (mercadoPagoSettings.UseFake)
+        {
+            services.AddScoped<IMercadoPagoGateway, MercadoPagoGatewayFake>();
+        }
 
         return services;
     }
