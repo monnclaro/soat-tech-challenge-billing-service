@@ -72,11 +72,15 @@ public class WebhookSignatureValidator : IWebhookSignatureValidator
 
         // TODO(diagnostico-temporario): remover junto com os outros logs de diagnostico do
         // webhook depois de confirmar a causa do 401 em producao — nunca loga o secret nem o
-        // manifesto completo (teria o mesmo efeito de logar o segredo em texto claro).
+        // manifesto completo (teria o mesmo efeito de logar o segredo em texto claro). O
+        // "fingerprint" é só os 8 primeiros caracteres do SHA256 do secret — não reversível,
+        // mas permite comparar "é o mesmo secret de antes?" sem expor o valor.
+        var fingerprint = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(_settings.WebhookSecret)))[..8].ToLowerInvariant();
+
         _logger.LogInformation(
             "Validacao de assinatura Mercado Pago: dataId={DataId} ts={Ts} assinaturaRecebida={AssinaturaRecebida} " +
-            "assinaturaCalculada={AssinaturaCalculada} bateu={Bateu} secretConfiguradoTamanho={SecretTamanho}",
-            context.DataId, ts, assinaturaRecebidaNormalizada, assinaturaCalculada, bateu, _settings.WebhookSecret.Length);
+            "assinaturaCalculada={AssinaturaCalculada} bateu={Bateu} secretConfiguradoTamanho={SecretTamanho} secretFingerprint={Fingerprint}",
+            context.DataId, ts, assinaturaRecebidaNormalizada, assinaturaCalculada, bateu, _settings.WebhookSecret.Length, fingerprint);
 
         return bateu;
     }
