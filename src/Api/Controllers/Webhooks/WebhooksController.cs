@@ -19,11 +19,13 @@ public class WebhooksController : ControllerBase
 {
     private readonly PagamentoController _controller;
     private readonly RegistrarWebhookPagamentoPresenter _presenter;
+    private readonly ILogger<WebhooksController> _logger;
 
-    public WebhooksController(PagamentoController controller, RegistrarWebhookPagamentoPresenter presenter)
+    public WebhooksController(PagamentoController controller, RegistrarWebhookPagamentoPresenter presenter, ILogger<WebhooksController> logger)
     {
         _controller = controller;
         _presenter = presenter;
+        _logger = logger;
     }
 
     [HttpPost]
@@ -40,6 +42,18 @@ public class WebhooksController : ControllerBase
     {
         var tipo = body?.Type ?? body?.Action ?? type;
         var dataId = body?.Data?.Id ?? dataIdQuery;
+
+        // TODO(diagnostico-temporario): remover depois de confirmar a causa do 400 em
+        // produção — sem isso não há visibilidade do que o Mercado Pago realmente envia
+        // (content-type, se o body bindou, etc.) sem acesso direto ao log do pod.
+        _logger.LogInformation(
+            "Webhook Mercado Pago recebido: contentType={ContentType} bodyNulo={BodyNulo} " +
+            "bodyType={BodyType} bodyAction={BodyAction} queryType={QueryType} tipoResolvido={Tipo} " +
+            "dataIdBody={DataIdBody} dataIdQuery={DataIdQuery} dataIdResolvido={DataId} " +
+            "temXSignature={TemXSignature} temXRequestId={TemXRequestId}",
+            Request.ContentType, body is null, body?.Type, body?.Action, type, tipo,
+            body?.Data?.Id, dataIdQuery, dataId,
+            !string.IsNullOrWhiteSpace(xSignature), !string.IsNullOrWhiteSpace(xRequestId));
 
         await _controller.RegistrarWebhook(new RegistrarWebhookPagamentoInput(tipo, dataId, xSignature, xRequestId), ct);
         return _presenter.Result!;

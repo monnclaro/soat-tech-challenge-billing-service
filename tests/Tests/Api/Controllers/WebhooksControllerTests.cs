@@ -12,6 +12,7 @@ using Domain.Pagamentos.Gateways;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
 namespace Tests.Api.Controllers;
@@ -33,7 +34,7 @@ public class WebhooksControllerTests
 
         var pagamentoController = new PagamentoController(buscarUseCase, buscarPorOrcamentoUseCase, registrarWebhookUseCase);
 
-        var controller = new WebhooksController(pagamentoController, _webhookPresenter)
+        var controller = new WebhooksController(pagamentoController, _webhookPresenter, NullLogger<WebhooksController>.Instance)
         {
             ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
         };
