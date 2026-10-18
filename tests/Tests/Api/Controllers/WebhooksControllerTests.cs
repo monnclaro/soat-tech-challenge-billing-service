@@ -74,6 +74,26 @@ public class WebhooksControllerTests
     }
 
     [Fact]
+    public async Task Receber_ComDataIdNoCorpoEQuery_DeveUsarOValorDaQuery()
+    {
+        // Os SDKs oficiais do Mercado Pago montam o manifesto da assinatura a partir do
+        // "data.id" da query string, não do corpo — mesmo quando o corpo também traz esse
+        // campo, a query deve ganhar.
+        _mercadoPagoGateway.Setup(g => g.BuscarPagamentoPorId("data-id-da-query", It.IsAny<CancellationToken>()))
+            .ReturnsAsync((PagamentoConsultadoOutput?)null);
+        _signatureValidator.Setup(v => v.EhValida(It.IsAny<WebhookSignatureContext>())).Returns(true);
+
+        var controller = CriarController();
+        var body = new MercadoPagoWebhookRequest("payment", null, new MercadoPagoWebhookDataRequest("data-id-do-corpo"));
+
+        var resultado = await controller.Receber(body, "data-id-da-query", null, null, null, CancellationToken.None);
+
+        resultado.Should().BeOfType<OkResult>();
+        _mercadoPagoGateway.Verify(g => g.BuscarPagamentoPorId("data-id-da-query", It.IsAny<CancellationToken>()), Times.Once);
+        _mercadoPagoGateway.Verify(g => g.BuscarPagamentoPorId("data-id-do-corpo", It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
     public async Task Receber_ComPayloadInvalido_DeveRetornarBadRequest()
     {
         var controller = CriarController();
