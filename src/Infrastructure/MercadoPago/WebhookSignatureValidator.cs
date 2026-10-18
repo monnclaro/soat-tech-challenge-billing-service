@@ -44,11 +44,15 @@ public class WebhookSignatureValidator : IWebhookSignatureValidator
             return false;
         }
 
+        // GroupBy().First() em vez de ToDictionary() direto: um "ts"/"v1" duplicado no
+        // header (malformado ou de um proxy que concatena) lançaria ArgumentException no
+        // ToDictionary — aqui só fica com a primeira ocorrência de cada chave.
         var partes = context.XSignature
             .Split(',')
             .Select(p => p.Split('=', 2))
             .Where(p => p.Length == 2)
-            .ToDictionary(p => p[0].Trim(), p => p[1].Trim());
+            .GroupBy(p => p[0].Trim())
+            .ToDictionary(g => g.Key, g => g.First()[1].Trim());
 
         if (!partes.TryGetValue("ts", out var ts) || !partes.TryGetValue("v1", out var assinaturaRecebida))
         {
