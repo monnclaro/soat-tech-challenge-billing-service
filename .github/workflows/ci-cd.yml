@@ -124,15 +124,19 @@ jobs:
           RABBITMQ_HOST=$(aws ssm get-parameter --name "/soat/${ENVIRONMENT}/rabbitmq/host" --query Parameter.Value --output text)
           RABBITMQ_USER=$(aws ssm get-parameter --name "/soat/${ENVIRONMENT}/rabbitmq/username" --query Parameter.Value --output text)
           RABBITMQ_PASSWORD=$(aws ssm get-parameter --name "/soat/${ENVIRONMENT}/rabbitmq/password" --with-decryption --query Parameter.Value --output text)
-          NODE_IP=$(aws ssm get-parameter --name "/soat/${ENVIRONMENT}/app/node-ip" --query Parameter.Value --output text 2>/dev/null || echo "")
 
+          # Sem MercadoPago__NotificationUrl de propósito: o "notification_url" por
+          # preferência tem prioridade sobre o webhook configurado em "Suas integrações"
+          # (painel) — mandar um aqui (apontando direto pro node, sem passar pelo API
+          # Gateway) fazia o Mercado Pago ignorar o webhook do painel (o único com a
+          # assinatura secreta configurada), causando SignatureMismatch sempre. Sem esse
+          # campo, o Mercado Pago usa só o webhook do painel.
           kubectl create secret generic soat-billing-api-secret -n soat-billing \
             --from-literal=ConnectionStrings__Default="Host=$DB_ENDPOINT;Port=5432;Database=soat_billing;Username=$DB_USER;Password=$DB_PASSWORD" \
             --from-literal=JwtSettings__Secret="$JWT_SECRET" \
             --from-literal=JwtSettings__ExpirationHours="2" \
             --from-literal=MercadoPago__AccessToken="$MERCADOPAGO_ACCESS_TOKEN" \
             --from-literal=MercadoPago__WebhookSecret="$MERCADOPAGO_WEBHOOK_SECRET" \
-            --from-literal=MercadoPago__NotificationUrl="http://${NODE_IP}:30082/api/v1/webhooks/mercadopago" \
             --from-literal=RabbitMq__Host="$RABBITMQ_HOST" \
             --from-literal=RabbitMq__VirtualHost="/" \
             --from-literal=RabbitMq__Username="$RABBITMQ_USER" \
