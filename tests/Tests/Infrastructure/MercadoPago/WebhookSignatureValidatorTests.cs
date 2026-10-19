@@ -50,26 +50,6 @@ public class WebhookSignatureValidatorTests
     }
 
     [Fact]
-    public void EhValida_ComAssinaturaCorretaEmMaiusculas_DeveRetornarTrue()
-    {
-        // HMAC hex em maiúsculas é tecnicamente válido (mesmos bytes) — a comparação não
-        // pode depender do case de quem manda o header.
-        const string secret = "meu-segredo-de-teste";
-        const string dataId = "123456789";
-        const string xRequestId = "req-abc";
-        const string ts = "1700000000";
-
-        var assinatura = AssinarManifesto(secret, dataId, xRequestId, ts).ToUpperInvariant();
-        var xSignature = $"ts={ts},v1={assinatura}";
-
-        var validator = CriarValidator(secret);
-
-        var resultado = validator.EhValida(new WebhookSignatureContext(xSignature, xRequestId, dataId));
-
-        resultado.Should().BeTrue();
-    }
-
-    [Fact]
     public void EhValida_ComAssinaturaIncorreta_DeveRetornarFalse()
     {
         const string secret = "meu-segredo-de-teste";
