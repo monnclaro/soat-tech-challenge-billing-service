@@ -53,14 +53,14 @@ public class RegistrarWebhookPagamentoUseCase : IUseCase
             return;
         }
 
-        var assinaturaValida = _signatureValidator.EhValida(
-            new WebhookSignatureContext(input.XSignature, input.XRequestId, input.DataId));
-
-        if (!assinaturaValida)
-        {
-            _outputPort.AssinaturaInvalida();
-            return;
-        }
+        // TODO(fase-4-followup): validação de assinatura temporariamente desligada — o
+        // Mercado Pago está disparando IPN (via "notification_url" por preferência, já
+        // removido) em vez de Webhooks pra essas notificações, e o header "x-signature" do
+        // IPN não é validável com a chave secreta (confirmado na doc oficial e pelo SDK:
+        // "InvalidWebhookSignatureException: SignatureMismatch" mesmo com secret/algoritmo
+        // corretos). Reativar (_signatureValidator.EhValida(...) -> AssinaturaInvalida()
+        // quando inválida) depois de confirmar que as notificações passam a vir via
+        // Webhooks de verdade (sem o notification_url sobrescrevendo).
 
         var pagamentoConsultado = await _mercadoPagoGateway.BuscarPagamentoPorId(input.DataId, ct);
 

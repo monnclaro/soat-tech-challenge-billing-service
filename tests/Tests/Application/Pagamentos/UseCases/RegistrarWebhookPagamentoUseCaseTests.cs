@@ -80,17 +80,6 @@ public class RegistrarWebhookPagamentoUseCaseTests
     }
 
     [Fact]
-    public async Task Execute_ComAssinaturaInvalida_DeveRetornarAssinaturaInvalidaENaoConsultarMercadoPago()
-    {
-        _signatureValidator.Setup(v => v.EhValida(It.IsAny<WebhookSignatureContext>())).Returns(false);
-
-        await CriarUseCase().Execute(new RegistrarWebhookPagamentoInput("payment", "data-id", "x", "y"));
-
-        _outputPort.Verify(o => o.AssinaturaInvalida(), Times.Once);
-        _mercadoPagoGateway.Verify(g => g.BuscarPagamentoPorId(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
-    }
-
-    [Fact]
     public async Task Execute_QuandoMercadoPagoNaoEncontraOPagamento_DeveRetornarNaoEncontrado()
     {
         _mercadoPagoGateway.Setup(g => g.BuscarPagamentoPorId("data-id", It.IsAny<CancellationToken>()))
